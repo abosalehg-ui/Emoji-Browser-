@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>متصفح الإيموجي - Emoji Browser</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --bg-card: #ffffff;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --border-color: #e0e0e0;
+            --accent-color: #4a90e2;
+            --accent-hover: #357abd;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --emoji-hover: #f0f7ff;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a1a;
+            --bg-secondary: #2d2d2d;
+            --bg-card: #252525;
+            --text-primary: #e0e0e0;
+            --text-secondary: #a0a0a0;
+            --border-color: #404040;
+            --accent-color: #5b9fd8;
+            --accent-hover: #4a8bc2;
+            --shadow: rgba(0, 0, 0, 0.3);
+            --emoji-hover: #2a3a4a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background-color: var(--bg-card);
+            padding: 20px 0;
+            box-shadow: 0 2px 8px var(--shadow);
+            margin-bottom: 30px;
+            border-bottom: 3px solid var(--accent-color);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1 {
+            color: var(--text-primary);
+            font-size: 2em;
+            font-weight: 600;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .theme-toggle, .lang-toggle {
+            padding: 8px 16px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle:hover, .lang-toggle:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .search-section {
+            background-color: var(--bg-card);
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .search-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        #searchInput {
+            flex: 1;
+            padding: 12px 15px;
+            font-size: 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            transition: border-color 0.3s;
+        }
+
+        #searchInput:focus {
+            outline: none;
+            border-color: var(--accent-color);
+        }
+
+        #searchBtn {
+            padding: 12px 30px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+
+        #searchBtn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .categories {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .category-btn {
+            padding: 10px 20px;
+            background-color: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+            color: var(--text-primary);
+        }
+
+        .category-btn:hover, .category-btn.active {
+            background-color: var(--accent-color);
+            color: white;
+            border-color: var(--accent-color);
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .emoji-card {
+            background-color: var(--bg-card);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid var(--border-color);
+            position: relative;
+        }
+
+        .emoji-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px var(--shadow);
+            background-color: var(--emoji-hover);
+            border-color: var(--accent-color);
+        }
+
+        .emoji-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .emoji-name {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 5px;
+        }
+
+        .favorite-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.3s;
+        }
+
+        .favorite-btn:hover {
+            opacity: 1;
+        }
+
+        .favorite-btn.active {
+            opacity: 1;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: var(--bg-card);
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px var(--shadow);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 28px;
+            cursor: pointer;
+            color: var(--text-secondary);
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .modal-emoji {
+            font-size: 5em;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .emoji-info {
+            margin: 15px 0;
+        }
+
+        .emoji-info-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .emoji-info-value {
+            color: var(--text-primary);
+            padding: 8px;
+            background-color: var(--bg-secondary);
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .copy-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .copy-btn {
+            flex: 1;
+            padding: 12px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .copy-btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .platform-support {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid var(--border-color);
+        }
+
+        .platform-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #4caf50;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 2000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            margin: 30px 0 20px 0;
+            color: var(--text-primary);
+            font-weight: 600;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        footer {
+            background-color: var(--bg-card);
+            padding: 20px;
+            text-align: center;
+            margin-top: 50px;
+            border-top: 3px solid var(--accent-color);
+            box-shadow: 0 -2px 8px var(--shadow);
+        }
+
+        .developer-info {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .developer-info a {
+            color: var(--accent-color);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .developer-info a:hover {
+            color: var(--accent-hover);
+            text-decoration: underline;
+        }
+
+        [dir="rtl"] .favorite-btn {
+            right: auto;
+            left: 8px;
+        }
+
+        [dir="ltr"] .notification {
+            right: 20px;
+            left: auto;
+        }
+
+        [dir="rtl"] .notification {
+            right: auto;
+            left: 20px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .emoji-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 10px;
+            }
+
+            .header-content {
+                justify-content: center;
+            }
+
+            .controls {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1 id="mainTitle">متصفح الإيموجي 😊</h1>
+            <div class="controls">
+                <button class="theme-toggle" id="themeToggle">🌙</button>
+                <button class="lang-toggle" id="langToggle">English</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="search-section">
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="ابحث عن إيموجي...">
+                <button id="searchBtn">بحث</button>
+            </div>
+            <div class="categories" id="categories"></div>
+        </div>
+
+        <div id="recentSection" style="display: none;">
+            <h2 class="section-title" id="recentTitle">المستخدمة مؤخراً</h2>
+            <div class="emoji-grid" id="recentEmojis"></div>
+        </div>
+
+        <div id="favoritesSection" style="display: none;">
+            <h2 class="section-title" id="favoritesTitle">المفضلة</h2>
+            <div class="emoji-grid" id="favoriteEmojis"></div>
+        </div>
+
+        <h2 class="section-title" id="allEmojisTitle">جميع الإيموجي</h2>
+        <div class="emoji-grid" id="emojiGrid"></div>
+    </div>
+
+    <div class="modal" id="emojiModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">تفاصيل الإيموجي</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            <div class="modal-emoji" id="modalEmoji"></div>
+            <div class="emoji-info">
+                <div class="emoji-info-label" id="labelArName">الاسم بالعربي:</div>
+                <div class="emoji-info-value" id="emojiArName"></div>
+            </div>
+            <div class="emoji-info">
+                <div class="emoji-info-label" id="labelEnName">الاسم بالإنجليزي:</div>
+                <div class="emoji-info-value" id="emojiEnName"></div>
+            </div>
+            <div class="emoji-info">
+                <div class="emoji-info-label" id="labelUnicode">رمز Unicode:</div>
+                <div class="emoji-info-value" id="emojiUnicode"></div>
+            </div>
+            <div class="emoji-info">
+                <div class="emoji-info-label" id="labelDesc">الوصف:</div>
+                <div class="emoji-info-value" id="emojiDesc"></div>
+            </div>
+            <div class="copy-buttons">
+                <button class="copy-btn" id="copyEmoji">نسخ الإيموجي</button>
+                <button class="copy-btn" id="copyUnicode">نسخ Unicode</button>
+                <button class="copy-btn" id="copyHtml">نسخ HTML</button>
+            </div>
+            <div class="platform-support">
+                <h3 id="platformTitle">الدعم على المنصات:</h3>
+                <div id="platformList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <footer>
+        <div class="developer-info">
+            <p>تطوير - عبدالكريم العبود</p>
+            <p><a href="mailto:abo.saleh.g@gmail.com">abo.saleh.g@gmail.com</a></p>
+        </div>
+    </footer>
+
+    <script>
+        const emojis = [
+            {emoji: '😀', arName: 'وجه مبتسم', enName: 'Grinning Face', category: 'smileys', desc: 'وجه سعيد مع ابتسامة عريضة', unicode: 'U+1F600'},
+            {emoji: '😃', arName: 'وجه مبتسم بعينين مفتوحتين', enName: 'Grinning Face with Big Eyes', category: 'smileys', desc: 'وجه مبهج وسعيد', unicode: 'U+1F603'},
+            {emoji: '😄', arName: 'وجه مبتسم بعينين مبتسمتين', enName: 'Grinning Face with Smiling Eyes', category: 'smileys', desc: 'ابتسامة حقيقية وسعادة', unicode: 'U+1F604'},
+            {emoji: '😁', arName: 'وجه متألق بعينين مبتسمتين', enName: 'Beaming Face with Smiling Eyes', category: 'smileys', desc: 'فرح وسرور كبير', unicode: 'U+1F601'},
+            {emoji: '😆', arName: 'وجه مبتسم وعيون مغلقة', enName: 'Grinning Squinting Face', category: 'smileys', desc: 'ضحك شديد', unicode: 'U+1F606'},
+            {emoji: '😅', arName: 'وجه مبتسم مع عرق', enName: 'Grinning Face with Sweat', category: 'smileys', desc: 'ارتياح بعد موقف متوتر', unicode: 'U+1F605'},
+            {emoji: '😂', arName: 'وجه بدموع الفرح', enName: 'Face with Tears of Joy', category: 'smileys', desc: 'ضحك حتى البكاء', unicode: 'U+1F602'},
+            {emoji: '🤣', arName: 'وجه متدحرج من الضحك', enName: 'Rolling on the Floor Laughing', category: 'smileys', desc: 'ضحك هستيري', unicode: 'U+1F923'},
+            {emoji: '😊', arName: 'وجه مبتسم بعيون مبتسمة', enName: 'Smiling Face with Smiling Eyes', category: 'smileys', desc: 'سعادة دافئة وصادقة', unicode: 'U+1F60A'},
+            {emoji: '😇', arName: 'وجه مبتسم بهالة', enName: 'Smiling Face with Halo', category: 'smileys', desc: 'برئ وطيب', unicode: 'U+1F607'},
+            {emoji: '🙂', arName: 'وجه مبتسم قليلاً', enName: 'Slightly Smiling Face', category: 'smileys', desc: 'ابتسامة خفيفة', unicode: 'U+1F642'},
+            {emoji: '🙃', arName: 'وجه مقلوب', enName: 'Upside-Down Face', category: 'smileys', desc: 'سخرية أو عبث', unicode: 'U+1F643'},
+            {emoji: '😉', arName: 'وجه غمزة', enName: 'Winking Face', category: 'smileys', desc: 'غمزة ودية أو مزاح', unicode: 'U+1F609'},
+            {emoji: '😌', arName: 'وجه مرتاح', enName: 'Relieved Face', category: 'smileys', desc: 'راحة وهدوء', unicode: 'U+1F60C'},
+            {emoji: '😍', arName: 'وجه مبتسم بقلوب في العيون', enName: 'Smiling Face with Heart-Eyes', category: 'smileys', desc: 'حب وإعجاب', unicode: 'U+1F60D'},
+            {emoji: '🥰', arName: 'وجه مبتسم بقلوب', enName: 'Smiling Face with Hearts', category: 'smileys', desc: 'حب كبير', unicode: 'U+1F970'},
+            {emoji: '😘', arName: 'وجه يرسل قبلة', enName: 'Face Blowing a Kiss', category: 'smileys', desc: 'إرسال قبلة', unicode: 'U+1F618'},
+            {emoji: '😗', arName: 'وجه مقبل', enName: 'Kissing Face', category: 'smileys', desc: 'قبلة', unicode: 'U+1F617'},
+            {emoji: '😙', arName: 'وجه مقبل بعيون مبتسمة', enName: 'Kissing Face with Smiling Eyes', category: 'smileys', desc: 'قبلة سعيدة', unicode: 'U+1F619'},
+            {emoji: '😚', arName: 'وجه مقبل بعيون مغلقة', enName: 'Kissing Face with Closed Eyes', category: 'smileys', desc: 'قبلة حنونة', unicode: 'U+1F61A'},
+            {emoji: '😋', arName: 'وجه يتلذذ بطعام', enName: 'Face Savoring Food', category: 'smileys', desc: 'لذيذ وشهي', unicode: 'U+1F60B'},
+            {emoji: '😛', arName: 'وجه بلسان', enName: 'Face with Tongue', category: 'smileys', desc: 'مرح ولعب', unicode: 'U+1F61B'},
+            {emoji: '😜', arName: 'وجه غمزة بلسان', enName: 'Winking Face with Tongue', category: 'smileys', desc: 'مزاح وعبث', unicode: 'U+1F61C'},
+            {emoji: '🤪', arName: 'وجه مجنون', enName: 'Zany Face', category: 'smileys', desc: 'جنون ومرح', unicode: 'U+1F�AA'},
+            {emoji: '😝', arName: 'وجه بلسان وعيون مغلقة', enName: 'Squinting Face with Tongue', category: 'smileys', desc: 'مرح شديد', unicode: 'U+1F61D'},
+            {emoji: '🤑', arName: 'وجه بفم من نقود', enName: 'Money-Mouth Face', category: 'smileys', desc: 'جشع أو ربح مالي', unicode: 'U+1F911'},
+            {emoji: '🤗', arName: 'وجه محتضن', enName: 'Smiling Face with Open Hands', category: 'smileys', desc: 'احتضان ودفء', unicode: 'U+1F917'},
+            {emoji: '🤭', arName: 'وجه بيد على الفم', enName: 'Face with Hand Over Mouth', category: 'smileys', desc: 'خجل أو مفاجأة', unicode: 'U+1F92D'},
+            {emoji: '🤫', arName: 'وجه صامت', enName: 'Shushing Face', category: 'smileys', desc: 'اطلب الصمت', unicode: 'U+1F92B'},
+            {emoji: '🤔', arName: 'وجه متفكر', enName: 'Thinking Face', category: 'smileys', desc: 'تفكير وتأمل', unicode: 'U+1F914'},
+            {emoji: '🤐', arName: 'وجه بسحاب', enName: 'Zipper-Mouth Face', category: 'smileys', desc: 'التزام الصمت', unicode: 'U+1F910'},
+            {emoji: '🤨', arName: 'وجه بحاجب مرفوع', enName: 'Face with Raised Eyebrow', category: 'smileys', desc: 'شك أو استفسار', unicode: 'U+1F928'},
+            {emoji: '😐', arName: 'وجه محايد', enName: 'Neutral Face', category: 'smileys', desc: 'عدم مبالاة', unicode: 'U+1F610'},
+            {emoji: '😑', arName: 'وجه بلا تعبير', enName: 'Expressionless Face', category: 'smileys', desc: 'عدم رد فعل', unicode: 'U+1F611'},
+            {emoji: '😶', arName: 'وجه بلا فم', enName: 'Face Without Mouth', category: 'smileys', desc: 'صمت تام', unicode: 'U+1F636'},
+            {emoji: '😏', arName: 'وجه متكبر', enName: 'Smirking Face', category: 'smileys', desc: 'ثقة أو غرور', unicode: 'U+1F60F'},
+            {emoji: '😒', arName: 'وجه غير مبال', enName: 'Unamused Face', category: 'smileys', desc: 'عدم اهتمام', unicode: 'U+1F612'},
+            {emoji: '🙄', arName: 'وجه يدور بعينيه', enName: 'Face with Rolling Eyes', category: 'smileys', desc: 'ضجر أو استهزاء', unicode: 'U+1F644'},
+            {emoji: '😬', arName: 'وجه متكشر', enName: 'Grimacing Face', category: 'smileys', desc: 'إحراج أو توتر', unicode: 'U+1F62C'},
+            {emoji: '🤥', arName: 'وجه كاذب', enName: 'Lying Face', category: 'smileys', desc: 'كذب أو خداع', unicode: 'U+1F925'},
+            {emoji: '😌', arName: 'وجه مرتاح', enName: 'Relieved Face', category: 'smileys', desc: 'راحة واطمئنان', unicode: 'U+1F60C'},
+            {emoji: '😔', arName: 'وجه متأمل', enName: 'Pensive Face', category: 'smileys', desc: 'حزن خفيف', unicode: 'U+1F614'},
+            {emoji: '😪', arName: 'وجه نعسان', enName: 'Sleepy Face', category: 'smileys', desc: 'نعاس وتعب', unicode: 'U+1F62A'},
+            {emoji: '🤤', arName: 'وجه يسيل لعابه', enName: 'Drooling Face', category: 'smileys', desc: 'جوع أو إعجاب', unicode: 'U+1F924'},
+            {emoji: '😴', arName: 'وجه نائم', enName: 'Sleeping Face', category: 'smileys', desc: 'نوم عميق', unicode: 'U+1F634'},
+            
+            {emoji: '🐶', arName: 'وجه كلب', enName: 'Dog Face', category: 'animals', desc: 'كلب لطيف', unicode: 'U+1F436'},
+            {emoji: '🐱', arName: 'وجه قطة', enName: 'Cat Face', category: 'animals', desc: 'قطة جميلة', unicode: 'U+1F431'},
+            {emoji: '🐭', arName: 'وجه فأر', enName: 'Mouse Face', category: 'animals', desc: 'فأر صغير', unicode: 'U+1F42D'},
+            {emoji: '🐹', arName: 'وجه هامستر', enName: 'Hamster', category: 'animals', desc: 'هامستر لطيف', unicode: 'U+1F439'},
+            {emoji: '🐰', arName: 'وجه أرنب', enName: 'Rabbit Face', category: 'animals', desc: 'أرنب ناعم', unicode: 'U+1F430'},
+            {emoji: '🦊', arName: 'وجه ثعلب', enName: 'Fox', category: 'animals', desc: 'ثعلب ذكي', unicode: 'U+1F98A'},
+            {emoji: '🐻', arName: 'وجه دب', enName: 'Bear', category: 'animals', desc: 'دب كبير', unicode: 'U+1F43B'},
+            {emoji: '🐼', arName: 'وجه باندا', enName: 'Panda', category: 'animals', desc: 'باندا لطيف', unicode: 'U+1F43C'},
+            {emoji: '🐨', arName: 'كوالا', enName: 'Koala', category: 'animals', desc: 'كوالا نائم', unicode: 'U+1F428'},
+            {emoji: '🐯', arName: 'وجه نمر', enName: 'Tiger Face', category: 'animals', desc: 'نمر مفترس', unicode: 'U+1F42F'},
+            {emoji: '🦁', arName: 'وجه أسد', enName: 'Lion', category: 'animals', desc: 'ملك الغابة', unicode: 'U+1F981'},
+            {emoji: '🐮', arName: 'وجه بقرة', enName: 'Cow Face', category: 'animals', desc: 'بقرة مزرعة', unicode: 'U+1F42E'},
+            {emoji: '🐷', arName: 'وجه خنزير', enName: 'Pig Face', category: 'animals', desc: 'خنزير وردي', unicode: 'U+1F437'},
+            {emoji: '🐸', arName: 'وجه ضفدع', enName: 'Frog', category: 'animals', desc: 'ضفدع أخضر', unicode: 'U+1F438'},
+            {emoji: '🐵', arName: 'وجه قرد', enName: 'Monkey Face', category: 'animals', desc: 'قرد مرح', unicode: 'U+1F435'},
+            {emoji: '🦄', arName: 'يونيكورن', enName: 'Unicorn', category: 'animals', desc: 'حصان خرافي', unicode: 'U+1F984'},
+            {emoji: '🐴', arName: 'وجه حصان', enName: 'Horse Face', category: 'animals', desc: 'حصان أصيل', unicode: 'U+1F434'},
+            {emoji: '🦓', arName: 'حمار وحشي', enName: 'Zebra', category: 'animals', desc: 'حمار مخطط', unicode: 'U+1F993'},
+            {emoji: '🦌', arName: 'غزال', enName: 'Deer', category: 'animals', desc: 'غزال جميل', unicode: 'U+1F98C'},
+            {emoji: '🐔', arName: 'دجاجة', enName: 'Chicken', category: 'animals', desc: 'دجاجة مزرعة', unicode: 'U+1F414'},
+            {emoji: '🐧', arName: 'بطريق', enName: 'Penguin', category: 'animals', desc: 'بطريق قطبي', unicode: 'U+1F427'},
+            {emoji: '🦆', arName: 'بطة', enName: 'Duck', category: 'animals', desc: 'بطة تسبح', unicode: 'U+1F986'},
+            {emoji: '🦅', arName: 'نسر', enName: 'Eagle', category: 'animals', desc: 'نسر محلق', unicode: 'U+1F985'},
+            {emoji: '🦉', arName: 'بومة', enName: 'Owl', category: 'animals', desc: 'بومة حكيمة', unicode: 'U+1F989'},
+            {emoji: '🐺', arName: 'ذئب', enName: 'Wolf', category: 'animals', desc: 'ذئب بري', unicode: 'U+1F43A'},
+            {emoji: '🐗', arName: 'خنزير بري', enName: 'Boar', category: 'animals', desc: 'خنزير الغابة', unicode: 'U+1F417'},
+            {emoji: '🦒', arName: 'زرافة', enName: 'Giraffe', category: 'animals', desc: 'زرافة طويلة', unicode: 'U+1F992'},
+            {emoji: '🐘', arName: 'فيل', enName: 'Elephant', category: 'animals', desc: 'فيل ضخم', unicode: 'U+1F418'},
+            {emoji: '🦏', arName: 'وحيد القرن', enName: 'Rhinoceros', category: 'animals', desc: 'وحيد قوي', unicode: 'U+1F98F'},
+            {emoji: '🦛', arName: 'فرس النهر', enName: 'Hippopotamus', category: 'animals', desc: 'فرس مائي', unicode: 'U+1F99B'},
+            {emoji: '🐊', arName: 'تمساح', enName: 'Crocodile', category: 'animals', desc: 'تمساح خطير', unicode: 'U+1F40A'},
+            {emoji: '🐢', arName: 'سلحفاة', enName: 'Turtle', category: 'animals', desc: 'سلحفاة بطيئة', unicode: 'U+1F422'},
+            {emoji: '🦎', arName: 'سحلية', enName: 'Lizard', category: 'animals', desc: 'سحلية صغيرة', unicode: 'U+1F98E'},
+            {emoji: '🐍', arName: 'ثعبان', enName: 'Snake', category: 'animals', desc: 'ثعبان زاحف', unicode: 'U+1F40D'},
+            {emoji: '🐙', arName: 'أخطبوط', enName: 'Octopus', category: 'animals', desc: 'أخطبوط ذكي', unicode: 'U+1F419'},
+            {emoji: '🦑', arName: 'حبار', enName: 'Squid', category: 'animals', desc: 'حبار بحري', unicode: 'U+1F991'},
+            {emoji: '🦐', arName: 'جمبري', enName: 'Shrimp', category: 'animals', desc: 'جمبري صغير', unicode: 'U+1F990'},
+            {emoji: '🦀', arName: 'سرطان البحر', enName: 'Crab', category: 'animals', desc: 'سرطان صدفي', unicode: 'U+1F980'},
+            {emoji: '🐟', arName: 'سمكة', enName: 'Fish', category: 'animals', desc: 'سمكة سابحة', unicode: 'U+1F41F'},
+            {emoji: '🐠', arName: 'سمكة استوائية', enName: 'Tropical Fish', category: 'animals', desc: 'سمكة ملونة', unicode: 'U+1F420'},
+            {emoji: '🐡', arName: 'سمكة منتفخة', enName: 'Blowfish', category: 'animals', desc: 'سمكة كروية', unicode: 'U+1F421'},
+            {emoji: '🦈', arName: 'قرش', enName: 'Shark', category: 'animals', desc: 'قرش مفترس', unicode: 'U+1F988'},
+            {emoji: '🐳', arName: 'حوت نافث', enName: 'Spouting Whale', category: 'animals', desc: 'حوت كبير', unicode: 'U+1F433'},
+            {emoji: '🐬', arName: 'دولفين', enName: 'Dolphin', category: 'animals', desc: 'دولفين ذكي', unicode: 'U+1F42C'},
+
+            {emoji: '🍎', arName: 'تفاحة حمراء', enName: 'Red Apple', category: 'food', desc: 'تفاحة طازجة', unicode: 'U+1F34E'},
+            {emoji: '🍊', arName: 'برتقالة', enName: 'Tangerine', category: 'food', desc: 'برتقالة طازجة', unicode: 'U+1F34A'},
+            {emoji: '🍋', arName: 'ليمون', enName: 'Lemon', category: 'food', desc: 'ليمون حامض', unicode: 'U+1F34B'},
+            {emoji: '🍌', arName: 'موز', enName: 'Banana', category: 'food', desc: 'موز أصفر', unicode: 'U+1F34C'},
+            {emoji: '🍉', arName: 'بطيخ', enName: 'Watermelon', category: 'food', desc: 'بطيخ منعش', unicode: 'U+1F349'},
+            {emoji: '🍇', arName: 'عنب', enName: 'Grapes', category: 'food', desc: 'عنب لذيذ', unicode: 'U+1F347'},
+            {emoji: '🍓', arName: 'فراولة', enName: 'Strawberry', category: 'food', desc: 'فراولة حمراء', unicode: 'U+1F353'},
+            {emoji: '🍑', arName: 'خوخ', enName: 'Peach', category: 'food', desc: 'خوخ ناضج', unicode: 'U+1F351'},
+            {emoji: '🍒', arName: 'كرز', enName: 'Cherries', category: 'food', desc: 'كرز أحمر', unicode: 'U+1F352'},
+            {emoji: '🍍', arName: 'أناناس', enName: 'Pineapple', category: 'food', desc: 'أناناس استوائي', unicode: 'U+1F34D'},
+            {emoji: '🥭', arName: 'مانجو', enName: 'Mango', category: 'food', desc: 'مانجو حلوة', unicode: 'U+1F96D'},
+            {emoji: '🥥', arName: 'جوز هند', enName: 'Coconut', category: 'food', desc: 'جوز هند طازج', unicode: 'U+1F965'},
+            {emoji: '🥝', arName: 'كيوي', enName: 'Kiwi Fruit', category: 'food', desc: 'كيوي أخضر', unicode: 'U+1F95D'},
+            {emoji: '🍅', arName: 'طماطم', enName: 'Tomato', category: 'food', desc: 'طماطم طازجة', unicode: 'U+1F345'},
+            {emoji: '🍆', arName: 'باذنجان', enName: 'Eggplant', category: 'food', desc: 'باذنجان بنفسجي', unicode: 'U+1F346'},
+            {emoji: '🥑', arName: 'أفوكادو', enName: 'Avocado', category: 'food', desc: 'أفوكادو صحي', unicode: 'U+1F951'},
+            {emoji: '🥦', arName: 'بروكلي', enName: 'Broccoli', category: 'food', desc: 'بروكلي أخضر', unicode: 'U+1F966'},
+            {emoji: '🥬', arName: 'خضروات ورقية', enName: 'Leafy Green', category: 'food', desc: 'خضار صحية', unicode: 'U+1F96C'},
+            {emoji: '🥒', arName: 'خيار', enName: 'Cucumber', category: 'food', desc: 'خيار طازج', unicode: 'U+1F952'},
+            {emoji: '🌶️', arName: 'فلفل حار', enName: 'Hot Pepper', category: 'food', desc: 'فلفل حراق', unicode: 'U+1F336'},
+            {emoji: '🌽', arName: 'ذرة', enName: 'Corn', category: 'food', desc: 'ذرة صفراء', unicode: 'U+1F33D'},
+            {emoji: '🥕', arName: 'جزر', enName: 'Carrot', category: 'food', desc: 'جزر برتقالي', unicode: 'U+1F955'},
+            {emoji: '🥔', arName: 'بطاطس', enName: 'Potato', category: 'food', desc: 'بطاطس', unicode: 'U+1F954'},
+            {emoji: '🍠', arName: 'بطاطا حلوة', enName: 'Sweet Potato', category: 'food', desc: 'بطاطا حلوة', unicode: 'U+1F360'},
+            {emoji: '🍞', arName: 'خبز', enName: 'Bread', category: 'food', desc: 'خبز طازج', unicode: 'U+1F35E'},
+            {emoji: '🥐', arName: 'كرواسون', enName: 'Croissant', category: 'food', desc: 'كرواسون فرنسي', unicode: 'U+1F950'},
+            {emoji: '🥖', arName: 'باغيت', enName: 'Baguette Bread', category: 'food', desc: 'خبز فرنسي', unicode: 'U+1F956'},
+            {emoji: '🥨', arName: 'بريتزل', enName: 'Pretzel', category: 'food', desc: 'بريتزل مملح', unicode: 'U+1F968'},
+            {emoji: '🧀', arName: 'جبن', enName: 'Cheese', category: 'food', desc: 'جبن لذيذ', unicode: 'U+1F9C0'},
+            {emoji: '🥚', arName: 'بيضة', enName: 'Egg', category: 'food', desc: 'بيضة طازجة', unicode: 'U+1F95A'},
+            {emoji: '🍳', arName: 'بيض مقلي', enName: 'Cooking', category: 'food', desc: 'بيض مطبوخ', unicode: 'U+1F373'},
+            {emoji: '🥞', arName: 'فطائر', enName: 'Pancakes', category: 'food', desc: 'فطائر محلاة', unicode: 'U+1F95E'},
+            {emoji: '🥓', arName: 'لحم مقدد', enName: 'Bacon', category: 'food', desc: 'لحم مقدد', unicode: 'U+1F953'},
+            {emoji: '🍗', arName: 'فخذ دجاج', enName: 'Poultry Leg', category: 'food', desc: 'دجاج مشوي', unicode: 'U+1F357'},
+            {emoji: '🍖', arName: 'لحم على عظم', enName: 'Meat on Bone', category: 'food', desc: 'لحم شهي', unicode: 'U+1F356'},
+            {emoji: '🍔', arName: 'برجر', enName: 'Hamburger', category: 'food', desc: 'همبرجر لذيذ', unicode: 'U+1F354'},
+            {emoji: '🍟', arName: 'بطاطس مقلية', enName: 'French Fries', category: 'food', desc: 'بطاطس محمرة', unicode: 'U+1F35F'},
+            {emoji: '🍕', arName: 'بيتزا', enName: 'Pizza', category: 'food', desc: 'بيتزا إيطالية', unicode: 'U+1F355'},
+            {emoji: '🌭', arName: 'هوت دوج', enName: 'Hot Dog', category: 'food', desc: 'نقانق', unicode: 'U+1F32D'},
+            {emoji: '🥪', arName: 'ساندويتش', enName: 'Sandwich', category: 'food', desc: 'ساندويتش شهي', unicode: 'U+1F96A'},
+            {emoji: '🌮', arName: 'تاكو', enName: 'Taco', category: 'food', desc: 'تاكو مكسيكي', unicode: 'U+1F32E'},
+            {emoji: '🌯', arName: 'بوريتو', enName: 'Burrito', category: 'food', desc: 'بوريتو ملفوف', unicode: 'U+1F32F'},
+            {emoji: '🥙', arName: 'خبز محشو', enName: 'Stuffed Flatbread', category: 'food', desc: 'خبز عربي', unicode: 'U+1F959'},
+            {emoji: '🍝', arName: 'معكرونة', enName: 'Spaghetti', category: 'food', desc: 'معكرونة إيطالية', unicode: 'U+1F35D'},
+            {emoji: '🍜', arName: 'نودلز', enName: 'Steaming Bowl', category: 'food', desc: 'نودلز ساخنة', unicode: 'U+1F35C'},
+            {emoji: '🍲', arName: 'قدر طعام', enName: 'Pot of Food', category: 'food', desc: 'طعام مطبوخ', unicode: 'U+1F372'},
+            {emoji: '🍛', arName: 'كاري', enName: 'Curry Rice', category: 'food', desc: 'كاري هندي', unicode: 'U+1F35B'},
+            {emoji: '🍣', arName: 'سوشي', enName: 'Sushi', category: 'food', desc: 'سوشي ياباني', unicode: 'U+1F363'},
+            {emoji: '🍱', arName: 'بينتو', enName: 'Bento Box', category: 'food', desc: 'صندوق غداء', unicode: 'U+1F371'},
+            {emoji: '🍤', arName: 'جمبري مقلي', enName: 'Fried Shrimp', category: 'food', desc: 'جمبري محمر', unicode: 'U+1F364'},
+            {emoji: '🍙', arName: 'كرة أرز', enName: 'Rice Ball', category: 'food', desc: 'أرز ياباني', unicode: 'U+1F359'},
+            {emoji: '🍚', arName: 'أرز مطبوخ', enName: 'Cooked Rice', category: 'food', desc: 'أرز أبيض', unicode: 'U+1F35A'},
+            {emoji: '🍘', arName: 'كعكة أرز', enName: 'Rice Cracker', category: 'food', desc: 'بسكويت أرز', unicode: 'U+1F358'},
+            {emoji: '🍥', arName: 'كعكة سمك', enName: 'Fish Cake', category: 'food', desc: 'كعكة يابانية', unicode: 'U+1F365'},
+            {emoji: '🥮', arName: 'كعكة القمر', enName: 'Moon Cake', category: 'food', desc: 'كعكة صينية', unicode: 'U+1F96E'},
+            {emoji: '🍢', arName: 'أودن', enName: 'Oden', category: 'food', desc: 'طعام ياباني', unicode: 'U+1F362'},
+            {emoji: '🍡', arName: 'دانجو', enName: 'Dango', category: 'food', desc: 'حلوى يابانية', unicode: 'U+1F361'},
+            {emoji: '🍧', arName: 'ثلج محلى', enName: 'Shaved Ice', category: 'food', desc: 'ثلج بنكهات', unicode: 'U+1F367'},
+            {emoji: '🍨', arName: 'آيس كريم', enName: 'Ice Cream', category: 'food', desc: 'بوظة باردة', unicode: 'U+1F368'},
+            {emoji: '🍦', arName: 'آيس كريم ناعم', enName: 'Soft Ice Cream', category: 'food', desc: 'بوظة طرية', unicode: 'U+1F366'},
+            {emoji: '🥧', arName: 'فطيرة', enName: 'Pie', category: 'food', desc: 'فطيرة محلاة', unicode: 'U+1F967'},
+            {emoji: '🍰', arName: 'قطعة كيك', enName: 'Shortcake', category: 'food', desc: 'كيك فراولة', unicode: 'U+1F370'},
+            {emoji: '🎂', arName: 'كعكة عيد ميلاد', enName: 'Birthday Cake', category: 'food', desc: 'كيك احتفال', unicode: 'U+1F382'},
+            {emoji: '🧁', arName: 'كب كيك', enName: 'Cupcake', category: 'food', desc: 'كب كيك صغير', unicode: 'U+1F9C1'},
+            {emoji: '🍮', arName: 'بودينغ', enName: 'Custard', category: 'food', desc: 'حلوى كاسترد', unicode: 'U+1F36E'},
+            {emoji: '🍭', arName: 'مصاصة', enName: 'Lollipop', category: 'food', desc: 'حلوى عصا', unicode: 'U+1F36D'},
+            {emoji: '🍬', arName: 'حلوى', enName: 'Candy', category: 'food', desc: 'حلوى ملفوفة', unicode: 'U+1F36C'},
+            {emoji: '🍫', arName: 'شوكولاتة', enName: 'Chocolate Bar', category: 'food', desc: 'شوكولاتة لذيذة', unicode: 'U+1F36B'},
+            {emoji: '🍿', arName: 'فشار', enName: 'Popcorn', category: 'food', desc: 'فشار محمص', unicode: 'U+1F37F'},
+            {emoji: '🍩', arName: 'دونات', enName: 'Doughnut', category: 'food', desc: 'دونات محلى', unicode: 'U+1F369'},
+            {emoji: '🍪', arName: 'بسكويت', enName: 'Cookie', category: 'food', desc: 'بسكويت شهي', unicode: 'U+1F36A'},
+
+            {emoji: '⚽', arName: 'كرة قدم', enName: 'Soccer Ball', category: 'sports', desc: 'كرة القدم', unicode: 'U+26BD'},
+            {emoji: '🏀', arName: 'كرة سلة', enName: 'Basketball', category: 'sports', desc: 'كرة السلة', unicode: 'U+1F3C0'},
+            {emoji: '🏈', arName: 'كرة قدم أمريكية', enName: 'American Football', category: 'sports', desc: 'كرة قدم أمريكية', unicode: 'U+1F3C8'},
+            {emoji: '⚾', arName: 'بيسبول', enName: 'Baseball', category: 'sports', desc: 'كرة بيسبول', unicode: 'U+26BE'},
+            {emoji: '🎾', arName: 'تنس', enName: 'Tennis', category: 'sports', desc: 'كرة تنس', unicode: 'U+1F3BE'},
+            {emoji: '🏐', arName: 'كرة طائرة', enName: 'Volleyball', category: 'sports', desc: 'كرة الطائرة', unicode: 'U+1F3D0'},
+            {emoji: '🏉', arName: 'رجبي', enName: 'Rugby Football', category: 'sports', desc: 'كرة الرجبي', unicode: 'U+1F3C9'},
+            {emoji: '🎱', arName: 'بلياردو', enName: 'Pool 8 Ball', category: 'sports', desc: 'كرة البلياردو', unicode: 'U+1F3B1'},
+            {emoji: '🏓', arName: 'تنس طاولة', enName: 'Ping Pong', category: 'sports', desc: 'كرة الطاولة', unicode: 'U+1F3D3'},
+            {emoji: '🏸', arName: 'ريشة', enName: 'Badminton', category: 'sports', desc: 'كرة الريشة', unicode: 'U+1F3F8'},
+            {emoji: '🥅', arName: 'مرمى', enName: 'Goal Net', category: 'sports', desc: 'شبكة المرمى', unicode: 'U+1F945'},
+            {emoji: '🏒', arName: 'هوكي جليد', enName: 'Ice Hockey', category: 'sports', desc: 'عصا الهوكي', unicode: 'U+1F3D2'},
+            {emoji: '🏑', arName: 'هوكي ميداني', enName: 'Field Hockey', category: 'sports', desc: 'هوكي العشب', unicode: 'U+1F3D1'},
+            {emoji: '🥊', arName: 'قفاز ملاكمة', enName: 'Boxing Glove', category: 'sports', desc: 'قفاز الملاكمة', unicode: 'U+1F94A'},
+            {emoji: '🥋', arName: 'زي فنون قتالية', enName: 'Martial Arts Uniform', category: 'sports', desc: 'زي الكاراتيه', unicode: 'U+1F94B'},
+            {emoji: '⛳', arName: 'جولف', enName: 'Flag in Hole', category: 'sports', desc: 'حفرة الجولف', unicode: 'U+26F3'},
+            {emoji: '🏹', arName: 'قوس وسهم', enName: 'Bow and Arrow', category: 'sports', desc: 'الرماية', unicode: 'U+1F3F9'},
+            {emoji: '🎣', arName: 'صيد سمك', enName: 'Fishing Pole', category: 'sports', desc: 'صنارة الصيد', unicode: 'U+1F3A3'},
+            {emoji: '🥌', arName: 'حجر كيرلنج', enName: 'Curling Stone', category: 'sports', desc: 'رياضة الكيرلنج', unicode: 'U+1F94C'},
+            {emoji: '🛷', arName: 'مزلاج', enName: 'Sled', category: 'sports', desc: 'التزلج', unicode: 'U+1F6F7'},
+            {emoji: '🎿', arName: 'تزلج', enName: 'Skis', category: 'sports', desc: 'زلاجات الثلج', unicode: 'U+1F3BF'},
+            {emoji: '⛷️', arName: 'متزلج', enName: 'Skier', category: 'sports', desc: 'شخص يتزلج', unicode: 'U+26F7'},
+            {emoji: '🏂', arName: 'سنوبورد', enName: 'Snowboarder', category: 'sports', desc: 'التزلج على اللوح', unicode: 'U+1F3C2'},
+            {emoji: '🏋️', arName: 'رفع أثقال', enName: 'Weight Lifter', category: 'sports', desc: 'رفع الأثقال', unicode: 'U+1F3CB'},
+            {emoji: '🤸', arName: 'جمباز', enName: 'Person Cartwheeling', category: 'sports', desc: 'الجمباز', unicode: 'U+1F938'},
+            {emoji: '🤼', arName: 'مصارعة', enName: 'Wrestlers', category: 'sports', desc: 'المصارعة', unicode: 'U+1F93C'},
+            {emoji: '🤽', arName: 'كرة ماء', enName: 'Water Polo', category: 'sports', desc: 'كرة الماء', unicode: 'U+1F93D'},
+            {emoji: '🤾', arName: 'كرة يد', enName: 'Handball', category: 'sports', desc: 'كرة اليد', unicode: 'U+1F93E'},
+            {emoji: '🤺', arName: 'مبارزة', enName: 'Fencer', category: 'sports', desc: 'المبارزة بالسيف', unicode: 'U+1F93A'},
+            {emoji: '🏇', arName: 'سباق خيل', enName: 'Horse Racing', category: 'sports', desc: 'سباق الخيول', unicode: 'U+1F3C7'},
+            {emoji: '🧗', arName: 'تسلق', enName: 'Climber', category: 'sports', desc: 'تسلق الجبال', unicode: 'U+1F9D7'},
+            {emoji: '🏌️', arName: 'جولف', enName: 'Golfer', category: 'sports', desc: 'لاعب الجولف', unicode: 'U+1F3CC'},
+            {emoji: '🏄', arName: 'ركوب أمواج', enName: 'Surfer', category: 'sports', desc: 'ركوب الأمواج', unicode: 'U+1F3C4'},
+            {emoji: '🚣', arName: 'تجديف', enName: 'Rowboat', category: 'sports', desc: 'التجديف', unicode: 'U+1F6A3'},
+            {emoji: '🏊', arName: 'سباحة', enName: 'Swimmer', category: 'sports', desc: 'السباحة', unicode: 'U+1F3CA'},
+            {emoji: '🚴', arName: 'ركوب دراجة', enName: 'Cyclist', category: 'sports', desc: 'ركوب الدراجة', unicode: 'U+1F6B4'},
+            {emoji: '🚵', arName: 'دراجة جبلية', enName: 'Mountain Biker', category: 'sports', desc: 'الدراجة الجبلية', unicode: 'U+1F6B5'},
+            {emoji: '🏆', arName: 'كأس', enName: 'Trophy', category: 'sports', desc: 'كأس البطولة', unicode: 'U+1F3C6'},
+            {emoji: '🥇', arName: 'ميدالية ذهبية', enName: 'Gold Medal', category: 'sports', desc: 'المركز الأول', unicode: 'U+1F947'},
+            {emoji: '🥈', arName: 'ميدالية فضية', enName: 'Silver Medal', category: 'sports', desc: 'المركز الثاني', unicode: 'U+1F948'},
+            {emoji: '🥉', arName: 'ميدالية برونزية', enName: 'Bronze Medal', category: 'sports', desc: 'المركز الثالث', unicode: 'U+1F949'},
+
+            {emoji: '🚗', arName: 'سيارة', enName: 'Car', category: 'travel', desc: 'سيارة صغيرة', unicode: 'U+1F697'},
+            {emoji: '🚕', arName: 'تاكسي', enName: 'Taxi', category: 'travel', desc: 'سيارة أجرة', unicode: 'U+1F695'},
+            {emoji: '🚙', arName: 'سيارة دفع رباعي', enName: 'SUV', category: 'travel', desc: 'سيارة رياضية', unicode: 'U+1F699'},
+            {emoji: '🚌', arName: 'حافلة', enName: 'Bus', category: 'travel', desc: 'حافلة نقل', unicode: 'U+1F68C'},
+            {emoji: '🚎', arName: 'حافلة كهربائية', enName: 'Trolleybus', category: 'travel', desc: 'حافلة ترولي', unicode: 'U+1F68E'},
+            {emoji: '🏎️', arName: 'سيارة سباق', enName: 'Racing Car', category: 'travel', desc: 'سيارة فورمولا', unicode: 'U+1F3CE'},
+            {emoji: '🚓', arName: 'سيارة شرطة', enName: 'Police Car', category: 'travel', desc: 'دورية الشرطة', unicode: 'U+1F693'},
+            {emoji: '🚑', arName: 'سيارة إسعاف', enName: 'Ambulance', category: 'travel', desc: 'سيارة الإسعاف', unicode: 'U+1F691'},
+            {emoji: '🚒', arName: 'سيارة إطفاء', enName: 'Fire Engine', category: 'travel', desc: 'شاحنة الإطفاء', unicode: 'U+1F692'},
+            {emoji: '🚐', arName: 'حافلة صغيرة', enName: 'Minibus', category: 'travel', desc: 'ميني باص', unicode: 'U+1F690'},
+            {emoji: '🚚', arName: 'شاحنة', enName: 'Delivery Truck', category: 'travel', desc: 'شاحنة توصيل', unicode: 'U+1F69A'},
+            {emoji: '🚛', arName: 'شاحنة كبيرة', enName: 'Articulated Lorry', category: 'travel', desc: 'شاحنة نقل', unicode: 'U+1F69B'},
+            {emoji: '🚜', arName: 'جرار', enName: 'Tractor', category: 'travel', desc: 'جرار زراعي', unicode: 'U+1F69C'},
+            {emoji: '🏍️', arName: 'دراجة نارية', enName: 'Motorcycle', category: 'travel', desc: 'موتوسيكل', unicode: 'U+1F3CD'},
+            {emoji: '🛵', arName: 'سكوتر', enName: 'Motor Scooter', category: 'travel', desc: 'دراجة صغيرة', unicode: 'U+1F6F5'},
+            {emoji: '🚲', arName: 'دراجة', enName: 'Bicycle', category: 'travel', desc: 'دراجة هوائية', unicode: 'U+1F6B2'},
+            {emoji: '🛴', arName: 'سكوتر ركل', enName: 'Kick Scooter', category: 'travel', desc: 'سكوتر الأطفال', unicode: 'U+1F6F4'},
+            {emoji: '✈️', arName: 'طائرة', enName: 'Airplane', category: 'travel', desc: 'طائرة ركاب', unicode: 'U+2708'},
+            {emoji: '🛩️', arName: 'طائرة صغيرة', enName: 'Small Airplane', category: 'travel', desc: 'طائرة خاصة', unicode: 'U+1F6E9'},
+            {emoji: '🚁', arName: 'هليكوبتر', enName: 'Helicopter', category: 'travel', desc: 'مروحية', unicode: 'U+1F681'},
+            {emoji: '🚂', arName: 'قطار', enName: 'Locomotive', category: 'travel', desc: 'قطار بخاري', unicode: 'U+1F682'},
+            {emoji: '🚆', arName: 'قطار سريع', enName: 'Train', category: 'travel', desc: 'قطار ركاب', unicode: 'U+1F686'},
+            {emoji: '🚄', arName: 'قطار فائق السرعة', enName: 'High-Speed Train', category: 'travel', desc: 'قطار الرصاصة', unicode: 'U+1F684'},
+            {emoji: '🚅', arName: 'قطار سريع برأس', enName: 'Bullet Train', category: 'travel', desc: 'قطار ياباني', unicode: 'U+1F685'},
+            {emoji: '🚈', arName: 'مترو خفيف', enName: 'Light Rail', category: 'travel', desc: 'قطار المدينة', unicode: 'U+1F688'},
+            {emoji: '🚇', arName: 'مترو', enName: 'Metro', category: 'travel', desc: 'مترو الأنفاق', unicode: 'U+1F687'},
+            {emoji: '🚊', arName: 'ترام', enName: 'Tram', category: 'travel', desc: 'ترام المدينة', unicode: 'U+1F68A'},
+            {emoji: '🚝', arName: 'قطار معلق', enName: 'Monorail', category: 'travel', desc: 'مونوريل', unicode: 'U+1F69D'},
+            {emoji: '🚞', arName: 'قطار جبلي', enName: 'Mountain Railway', category: 'travel', desc: 'قطار الجبال', unicode: 'U+1F69E'},
+            {emoji: '🚋', arName: 'ترام كهربائي', enName: 'Tram Car', category: 'travel', desc: 'عربة ترام', unicode: 'U+1F68B'},
+            {emoji: '🚃', arName: 'عربة قطار', enName: 'Railway Car', category: 'travel', desc: 'عربة سكة حديد', unicode: 'U+1F683'},
+            {emoji: '🚉', arName: 'محطة قطار', enName: 'Station', category: 'travel', desc: 'محطة السكك', unicode: 'U+1F689'},
+            {emoji: '🚢', arName: 'سفينة', enName: 'Ship', category: 'travel', desc: 'سفينة كبيرة', unicode: 'U+1F6A2'},
+            {emoji: '⛴️', arName: 'عبارة', enName: 'Ferry', category: 'travel', desc: 'عبارة نقل', unicode: 'U+26F4'},
+            {emoji: '🛳️', arName: 'سفينة ركاب', enName: 'Passenger Ship', category: 'travel', desc: 'سفينة سياحية', unicode: 'U+1F6F3'},
+            {emoji: '⛵', arName: 'قارب شراعي', enName: 'Sailboat', category: 'travel', desc: 'قارب بشراع', unicode: 'U+26F5'},
+            {emoji: '🚤', arName: 'قارب سريع', enName: 'Speedboat', category: 'travel', desc: 'قارب موتور', unicode: 'U+1F6A4'},
+            {emoji: '🛥️', arName: 'قارب موتور', enName: 'Motor Boat', category: 'travel', desc: 'يخت صغير', unicode: 'U+1F6E5'},
+            {emoji: '🛶', arName: 'قارب تجديف', enName: 'Canoe', category: 'travel', desc: 'قارب كانو', unicode: 'U+1F6F6'},
+            {emoji: '⚓', arName: 'مرساة', enName: 'Anchor', category: 'travel', desc: 'مرساة السفينة', unicode: 'U+2693'},
+            {emoji: '🚀', arName: 'صاروخ', enName: 'Rocket', category: 'travel', desc: 'صاروخ فضائي', unicode: 'U+1F680'},
+            {emoji: '🛸', arName: 'صحن طائر', enName: 'Flying Saucer', category: 'travel', desc: 'طبق فضائي', unicode: 'U+1F6F8'},
+            {emoji: '🛰️', arName: 'قمر صناعي', enName: 'Satellite', category: 'travel', desc: 'ساتل فضائي', unicode: 'U+1F6F0'},
+
+            {emoji: '❤️', arName: 'قلب أحمر', enName: 'Red Heart', category: 'symbols', desc: 'حب وعاطفة', unicode: 'U+2764'},
+            {emoji: '💛', arName: 'قلب أصفر', enName: 'Yellow Heart', category: 'symbols', desc: 'صداقة ومحبة', unicode: 'U+1F49B'},
+            {emoji: '💚', arName: 'قلب أخضر', enName: 'Green Heart', category: 'symbols', desc: 'أمل وطبيعة', unicode: 'U+1F49A'},
+            {emoji: '💙', arName: 'قلب أزرق', enName: 'Blue Heart', category: 'symbols', desc: 'ثقة وسلام', unicode: 'U+1F499'},
+            {emoji: '💜', arName: 'قلب بنفسجي', enName: 'Purple Heart', category: 'symbols', desc: 'رومانسية', unicode: 'U+1F49C'},
+            {emoji: '🖤', arName: 'قلب أسود', enName: 'Black Heart', category: 'symbols', desc: 'حزن أو قوة', unicode: 'U+1F5A4'},
+            {emoji: '🤍', arName: 'قلب أبيض', enName: 'White Heart', category: 'symbols', desc: 'نقاء وبراءة', unicode: 'U+1F90D'},
+            {emoji: '🤎', arName: 'قلب بني', enName: 'Brown Heart', category: 'symbols', desc: 'دفء وراحة', unicode: 'U+1F90E'},
+            {emoji: '💔', arName: 'قلب مكسور', enName: 'Broken Heart', category: 'symbols', desc: 'حزن وألم', unicode: 'U+1F494'},
+            {emoji: '💕', arName: 'قلبان', enName: 'Two Hearts', category: 'symbols', desc: 'حب متبادل', unicode: 'U+1F495'},
+            {emoji: '💞', arName: 'قلوب دوارة', enName: 'Revolving Hearts', category: 'symbols', desc: 'حب قوي', unicode: 'U+1F49E'},
+            {emoji: '💓', arName: 'قلب ينبض', enName: 'Beating Heart', category: 'symbols', desc: 'قلب حي', unicode: 'U+1F493'},
+            {emoji: '💗', arName: 'قلب نامي', enName: 'Growing Heart', category: 'symbols', desc: 'حب متزايد', unicode: 'U+1F497'},
+            {emoji: '💖', arName: 'قلب متلألئ', enName: 'Sparkling Heart', category: 'symbols', desc: 'حب مميز', unicode: 'U+1F496'},
+            {emoji: '💘', arName: 'قلب بسهم', enName: 'Heart with Arrow', category: 'symbols', desc: 'حب من أول نظرة', unicode: 'U+1F498'},
+            {emoji: '💝', arName: 'قلب بشريط', enName: 'Heart with Ribbon', category: 'symbols', desc: 'هدية حب', unicode: 'U+1F49D'},
+            {emoji: '⭐', arName: 'نجمة', enName: 'Star', category: 'symbols', desc: 'نجمة مميزة', unicode: 'U+2B50'},
+            {emoji: '🌟', arName: 'نجمة متألقة', enName: 'Glowing Star', category: 'symbols', desc: 'نجمة لامعة', unicode: 'U+1F31F'},
+            {emoji: '✨', arName: 'شرارات', enName: 'Sparkles', category: 'symbols', desc: 'لمعان وبريق', unicode: 'U+2728'},
+            {emoji: '💫', arName: 'دوار', enName: 'Dizzy', category: 'symbols', desc: 'دوخة أو نجوم', unicode: 'U+1F4AB'},
+            {emoji: '🔥', arName: 'نار', enName: 'Fire', category: 'symbols', desc: 'حرارة ونشاط', unicode: 'U+1F525'},
+            {emoji: '💥', arName: 'انفجار', enName: 'Collision', category: 'symbols', desc: 'تصادم أو انفجار', unicode: 'U+1F4A5'},
+            {emoji: '💦', arName: 'قطرات عرق', enName: 'Sweat Droplets', category: 'symbols', desc: 'عرق أو ماء', unicode: 'U+1F4A6'},
+            {emoji: '💨', arName: 'اندفاع', enName: 'Dashing Away', category: 'symbols', desc: 'سرعة أو هواء', unicode: 'U+1F4A8'},
+            {emoji: '✅', arName: 'علامة صح', enName: 'Check Mark Button', category: 'symbols', desc: 'موافقة أو إتمام', unicode: 'U+2705'},
+            {emoji: '❌', arName: 'علامة خطأ', enName: 'Cross Mark', category: 'symbols', desc: 'رفض أو خطأ', unicode: 'U+274C'},
+            {emoji: '⚠️', arName: 'تحذير', enName: 'Warning', category: 'symbols', desc: 'انتباه أو خطر', unicode: 'U+26A0'},
+            {emoji: '🚫', arName: 'ممنوع', enName: 'Prohibited', category: 'symbols', desc: 'منع أو حظر', unicode: 'U+1F6AB'},
+            {emoji: '⛔', arName: 'دخول ممنوع', enName: 'No Entry', category: 'symbols', desc: 'عدم دخول', unicode: 'U+26D4'},
+            {emoji: '💯', arName: 'مئة نقطة', enName: 'Hundred Points', category: 'symbols', desc: 'مثالي أو ممتاز', unicode: 'U+1F4AF'},
+            {emoji: '🔔', arName: 'جرس', enName: 'Bell', category: 'symbols', desc: 'تنبيه أو إشعار', unicode: 'U+1F514'},
+            {emoji: '🔕', arName: 'جرس مكتوم', enName: 'Bell with Slash', category: 'symbols', desc: 'صامت', unicode: 'U+1F515'},
+            {emoji: '📢', arName: 'مكبر صوت', enName: 'Loudspeaker', category: 'symbols', desc: 'إعلان', unicode: 'U+1F4E2'},
+            {emoji: '📣', arName: 'ميجافون', enName: 'Megaphone', category: 'symbols', desc: 'صوت عالي', unicode: 'U+1F4E3'},
+            {emoji: '🎵', arName: 'نوتة موسيقية', enName: 'Musical Note', category: 'symbols', desc: 'موسيقى', unicode: 'U+1F3B5'},
+            {emoji: '🎶', arName: 'نوتات موسيقية', enName: 'Musical Notes', category: 'symbols', desc: 'أنغام', unicode: 'U+1F3B6'},
+            {emoji: '🔴', arName: 'دائرة حمراء', enName: 'Red Circle', category: 'symbols', desc: 'رمز أحمر', unicode: 'U+1F534'},
+            {emoji: '🟠', arName: 'دائرة برتقالية', enName: 'Orange Circle', category: 'symbols', desc: 'رمز برتقالي', unicode: 'U+1F7E0'},
+            {emoji: '🟡', arName: 'دائرة صفراء', enName: 'Yellow Circle', category: 'symbols', desc: 'رمز أصفر', unicode: 'U+1F7E1'},
+            {emoji: '🟢', arName: 'دائرة خضراء', enName: 'Green Circle', category: 'symbols', desc: 'رمز أخضر', unicode: 'U+1F7E2'},
+            {emoji: '🔵', arName: 'دائرة زرقاء', enName: 'Blue Circle', category: 'symbols', desc: 'رمز أزرق', unicode: 'U+1F535'},
+            {emoji: '🟣', arName: 'دائرة بنفسجية', enName: 'Purple Circle', category: 'symbols', desc: 'رمز بنفسجي', unicode: 'U+1F7E3'},
+            {emoji: '⚫', arName: 'دائرة سوداء', enName: 'Black Circle', category: 'symbols', desc: 'رمز أسود', unicode: 'U+26AB'},
+            {emoji: '⚪', arName: 'دائرة بيضاء', enName: 'White Circle', category: 'symbols', desc: 'رمز أبيض', unicode: 'U+26AA'},
+            {emoji: '🟤', arName: 'دائرة بنية', enName: 'Brown Circle', category: 'symbols', desc: 'رمز بني', unicode: 'U+1F7E4'}
+        ];
+
+        const categories = {
+            ar: {
+                all: 'الكل',
+                smileys: 'وجوه',
+                animals: 'حيوانات',
+                food: 'طعام',
+                sports: 'رياضة',
+                travel: 'سفر',
+                symbols: 'رموز'
+            },
+            en: {
+                all: 'All',
+                smileys: 'Smileys',
+                animals: 'Animals',
+                food: 'Food',
+                sports: 'Sports',
+                travel: 'Travel',
+                symbols: 'Symbols'
+            }
+        };
+
+        const translations = {
+            ar: {
+                mainTitle: 'متصفح الإيموجي 😊',
+                searchPlaceholder: 'ابحث عن إيموجي...',
+                searchBtn: 'بحث',
+                recentTitle: 'المستخدمة مؤخراً',
+                favoritesTitle: 'المفضلة',
+                allEmojisTitle: 'جميع الإيموجي',
+                modalTitle: 'تفاصيل الإيموجي',
+                labelArName: 'الاسم بالعربي:',
+                labelEnName: 'الاسم بالإنجليزي:',
+                labelUnicode: 'رمز Unicode:',
+                labelDesc: 'الوصف:',
+                copyEmoji: 'نسخ الإيموجي',
+                copyUnicode: 'نسخ Unicode',
+                copyHtml: 'نسخ HTML',
+                platformTitle: 'الدعم على المنصات:',
+                notificationCopied: 'تم النسخ بنجاح! ✅',
+                notificationAdded: 'تمت الإضافة للمفضلة! ⭐',
+                notificationRemoved: 'تمت الإزالة من المفضلة!'
+            },
+            en: {
+                mainTitle: 'Emoji Browser 😊',
+                searchPlaceholder: 'Search for emoji...',
+                searchBtn: 'Search',
+                recentTitle: 'Recently Used',
+                favoritesTitle: 'Favorites',
+                allEmojisTitle: 'All Emojis',
+                modalTitle: 'Emoji Details',
+                labelArName: 'Arabic Name:',
+                labelEnName: 'English Name:',
+                labelUnicode: 'Unicode:',
+                labelDesc: 'Description:',
+                copyEmoji: 'Copy Emoji',
+                copyUnicode: 'Copy Unicode',
+                copyHtml: 'Copy HTML',
+                platformTitle: 'Platform Support:',
+                notificationCopied: 'Copied successfully! ✅',
+                notificationAdded: 'Added to favorites! ⭐',
+                notificationRemoved: 'Removed from favorites!'
+            }
+        };
+
+        let currentLang = 'ar';
+        let currentTheme = 'light';
+        let currentCategory = 'all';
+        let recentEmojis = [];
+        let favoriteEmojis = [];
+        let filteredEmojis = emojis;
+
+        function init() {
+            loadData();
+            renderCategories();
+            renderEmojis(emojis);
+            updateRecent();
+            updateFavorites();
+            setupEventListeners();
+            applyTranslations();
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem('emojiData');
+            if (saved) {
+                const data = JSON.parse(saved);
+                recentEmojis = data.recent || [];
+                favoriteEmojis = data.favorites || [];
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('emojiData', JSON.stringify({
+                recent: recentEmojis,
+                favorites: favoriteEmojis
+            }));
+        }
+
+        function setupEventListeners() {
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+            document.getElementById('langToggle').addEventListener('click', toggleLanguage);
+            document.getElementById('searchBtn').addEventListener('click', performSearch);
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performSearch();
+            });
+            document.getElementById('closeModal').addEventListener('click', closeModal);
+            document.getElementById('emojiModal').addEventListener('click', (e) => {
+                if (e.target.id === 'emojiModal') closeModal();
+            });
+            document.getElementById('copyEmoji').addEventListener('click', () => copyToClipboard('emoji'));
+            document.getElementById('copyUnicode').addEventListener('click', () => copyToClipboard('unicode'));
+            document.getElementById('copyHtml').addEventListener('click', () => copyToClipboard('html'));
+        }
+
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            document.getElementById('themeToggle').textContent = currentTheme === 'light' ? '🌙' : '☀️';
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            document.documentElement.setAttribute('lang', currentLang);
+            document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+            document.getElementById('langToggle').textContent = currentLang === 'ar' ? 'English' : 'العربية';
+            applyTranslations();
+            renderCategories();
+            renderEmojis(filteredEmojis);
+        }
+
+        function applyTranslations() {
+            const t = translations[currentLang];
+            document.getElementById('mainTitle').textContent = t.mainTitle;
+            document.getElementById('searchInput').placeholder = t.searchPlaceholder;
+            document.getElementById('searchBtn').textContent = t.searchBtn;
+            document.getElementById('recentTitle').textContent = t.recentTitle;
+            document.getElementById('favoritesTitle').textContent = t.favoritesTitle;
+            document.getElementById('allEmojisTitle').textContent = t.allEmojisTitle;
+            document.getElementById('modalTitle').textContent = t.modalTitle;
+            document.getElementById('labelArName').textContent = t.labelArName;
+            document.getElementById('labelEnName').textContent = t.labelEnName;
+            document.getElementById('labelUnicode').textContent = t.labelUnicode;
+            document.getElementById('labelDesc').textContent = t.labelDesc;
+            document.getElementById('copyEmoji').textContent = t.copyEmoji;
+            document.getElementById('copyUnicode').textContent = t.copyUnicode;
+            document.getElementById('copyHtml').textContent = t.copyHtml;
+            document.getElementById('platformTitle').textContent = t.platformTitle;
+        }
+
+        function renderCategories() {
+            const container = document.getElementById('categories');
+            container.innerHTML = '';
+            
+            const cats = categories[currentLang];
+            Object.keys(cats).forEach(key => {
+                const btn = document.createElement('button');
+                btn.className = 'category-btn' + (currentCategory === key ? ' active' : '');
+                btn.textContent = cats[key];
+                btn.addEventListener('click', () => filterByCategory(key));
+                container.appendChild(btn);
+            });
+        }
+
+        function filterByCategory(category) {
+            currentCategory = category;
+            if (category === 'all') {
+                filteredEmojis = emojis;
+            } else {
+                filteredEmojis = emojis.filter(e => e.category === category);
+            }
+            renderEmojis(filteredEmojis);
+            renderCategories();
+        }
+
+        function performSearch() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            if (!query) {
+                renderEmojis(emojis);
+                return;
+            }
+            
+            const results = emojis.filter(e => 
+                e.arName.toLowerCase().includes(query) ||
+                e.enName.toLowerCase().includes(query) ||
+                e.desc.toLowerCase().includes(query) ||
+                e.emoji.includes(query)
+            );
+            
+            filteredEmojis = results;
+            renderEmojis(results);
+        }
+
+        function renderEmojis(emojiList) {
+            const container = document.getElementById('emojiGrid');
+            container.innerHTML = '';
+            
+            emojiList.forEach(emoji => {
+                const card = createEmojiCard(emoji);
+                container.appendChild(card);
+            });
+        }
+
+        function createEmojiCard(emoji) {
+            const card = document.createElement('div');
+            card.className = 'emoji-card';
+            
+            const isFav = favoriteEmojis.some(f => f.emoji === emoji.emoji);
+            
+            card.innerHTML = `
+                <button class="favorite-btn ${isFav ? 'active' : ''}" data-emoji="${emoji.emoji}">
+                    ${isFav ? '⭐' : '☆'}
+                </button>
+                <div class="emoji-icon">${emoji.emoji}</div>
+                <div class="emoji-name">${currentLang === 'ar' ? emoji.arName : emoji.enName}</div>
+            `;
+            
+            card.querySelector('.favorite-btn').addEventListener('click', (e) => {
+                e.stopPropagation();
+                toggleFavorite(emoji);
+            });
+            
+            card.addEventListener('click', () => {
+                addToRecent(emoji);
+                showEmojiDetails(emoji);
+            });
+            
+            return card;
+        }
+
+        function toggleFavorite(emoji) {
+            const index = favoriteEmojis.findIndex(f => f.emoji === emoji.emoji);
+            if (index > -1) {
+                favoriteEmojis.splice(index, 1);
+                showNotification(translations[currentLang].notificationRemoved);
+            } else {
+                favoriteEmojis.push(emoji);
+                showNotification(translations[currentLang].notificationAdded);
+            }
+            saveData();
+            updateFavorites();
+            renderEmojis(filteredEmojis);
+        }
+
+        function addToRecent(emoji) {
+            recentEmojis = recentEmojis.filter(e => e.emoji !== emoji.emoji);
+            recentEmojis.unshift(emoji);
+            if (recentEmojis.length > 20) {
+                recentEmojis = recentEmojis.slice(0, 20);
+            }
+            saveData();
+            updateRecent();
+        }
+
+        function updateRecent() {
+            const section = document.getElementById('recentSection');
+            const container = document.getElementById('recentEmojis');
+            
+            if (recentEmojis.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            
+            section.style.display = 'block';
+            container.innerHTML = '';
+            recentEmojis.slice(0, 10).forEach(emoji => {
+                const card = createEmojiCard(emoji);
+                container.appendChild(card);
+            });
+        }
+
+        function updateFavorites() {
+            const section = document.getElementById('favoritesSection');
+            const container = document.getElementById('favoriteEmojis');
+            
+            if (favoriteEmojis.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            
+            section.style.display = 'block';
+            container.innerHTML = '';
+            favoriteEmojis.forEach(emoji => {
+                const card = createEmojiCard(emoji);
+                container.appendChild(card);
+            });
+        }
+
+        let currentEmoji = null;
+
+        function showEmojiDetails(emoji) {
+            currentEmoji = emoji;
+            document.getElementById('modalEmoji').textContent = emoji.emoji;
+            document.getElementById('emojiArName').textContent = emoji.arName;
+            document.getElementById('emojiEnName').textContent = emoji.enName;
+            document.getElementById('emojiUnicode').textContent = emoji.unicode;
+            document.getElementById('emojiDesc').textContent = emoji.desc;
+            
+            const platformList = document.getElementById('platformList');
+            platformList.innerHTML = `
+                <div class="platform-item">
+                    <span>Apple (iOS)</span>
+                    <span>✅</span>
+                </div>
+                <div class="platform-item">
+                    <span>Google (Android)</span>
+                    <span>✅</span>
+                </div>
+                <div class="platform-item">
+                    <span>Microsoft (Windows)</span>
+                    <span>✅</span>
+                </div>
+                <div class="platform-item">
+                    <span>Samsung</span>
+                    <span>✅</span>
+                </div>
+                <div class="platform-item">
+                    <span>WhatsApp</span>
+                    <span>✅</span>
+                </div>
+                <div class="platform-item">
+                    <span>Twitter</span>
+                    <span>✅</span>
+                </div>
+                <div class="platform-item">
+                    <span>Facebook</span>
+                    <span>✅</span>
+                </div>
+            `;
+            
+            document.getElementById('emojiModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('emojiModal').classList.remove('show');
+        }
+
+        function copyToClipboard(type) {
+            if (!currentEmoji) return;
+            
+            let textToCopy = '';
+            switch(type) {
+                case 'emoji':
+                    textToCopy = currentEmoji.emoji;
+                    break;
+                case 'unicode':
+                    textToCopy = currentEmoji.unicode;
+                    break;
+                case 'html':
+                    const codePoint = currentEmoji.unicode.replace('U+', '');
+                    textToCopy = `&#x${codePoint};`;
+                    break;
+            }
+            
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                showNotification(translations[currentLang].notificationCopied);
+            });
+        }
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        init();
+    </script>
+</body>
+</html>
