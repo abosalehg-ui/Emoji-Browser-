@@ -4,6 +4,14 @@
   box-sizing: border-box;
 }
 
+/* The app hides sections with the native `hidden` attribute rather than inline
+   styles, which keeps them out of the accessibility tree and lets the CSP drop
+   'unsafe-inline' from style-src. Author `display` rules would otherwise beat
+   the UA stylesheet's [hidden] rule, hence !important. */
+[hidden] {
+  display: none !important;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -43,7 +51,7 @@ button {
   top: -100px;
   left: 0;
   background: var(--accent-color);
-  color: white;
+  color: var(--on-accent);
   padding: var(--space-sm) var(--space-md);
   z-index: 9999;
   border-radius: 0 0 var(--radius-md) 0;

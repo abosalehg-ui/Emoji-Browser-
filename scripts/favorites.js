@@ -15,7 +15,3 @@ export function toggleFavorite(emojiObj) {
   }
   state.set('favorites', next);
 }
-
-export function isFavorite(emoji) {
-  return state.get('favorites').includes(emoji);
-}

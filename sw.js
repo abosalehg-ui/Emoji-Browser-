@@ -1,7 +1,7 @@
 // Keep this in sync with "version" in data/manifest.json and package.json.
 // The validate:data check (run in CI) fails the build if they drift, which is
 // what forces the cache to be invalidated whenever the app is re-released.
-const CACHE_VERSION = 'v2.0.0';
+const CACHE_VERSION = 'v2.1.0';
 const CACHE_NAME = `emoji-browser-${CACHE_VERSION}`;
 const MANIFEST_URL = './data/manifest.json';
 
@@ -73,15 +73,25 @@ async function cacheFirst(req) {
 async function networkFirst(req, fallbackUrl, offlineUrl) {
   try {
     const res = await fetch(req);
-    if (res && res.ok) {
+    // A redirected response cannot be stored, and storing a non-OK one would
+    // poison the shell for every later offline visit.
+    if (res && res.ok && !res.redirected) {
       const cache = await caches.open(CACHE_NAME);
-      cache.put(req, res.clone());
+      await cache.put(req, res.clone());
     }
     return res;
   } catch (err) {
-    const cached = await caches.match(fallbackUrl);
+    // respondWith() turns a resolved `undefined` into a hard network error, so
+    // every branch below has to produce an actual Response.
+    const cached =
+      (await caches.match(req)) ||
+      (await caches.match(fallbackUrl)) ||
+      (await caches.match(offlineUrl));
     if (cached) return cached;
-    return caches.match(offlineUrl);
+    return new Response(
+      '<!doctype html><meta charset="utf-8"><title>Offline</title><p>غير متصل — Offline',
+      { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8' } }
+    );
   }
 }
 

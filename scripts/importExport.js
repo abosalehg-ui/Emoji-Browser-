@@ -3,6 +3,8 @@ import * as state from './state.js';
 import { t } from './i18n.js';
 import { showNotification } from './notify.js';
 
+const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
+
 export function downloadExport() {
   const stateSnapshot = {
     prefs: state.get('prefs') || {
@@ -36,7 +38,12 @@ export function triggerImport(mode = 'merge') {
   input.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (file.size > MAX_IMPORT_BYTES) {
+      showNotification(t('errFileTooLarge'), 'error');
+      return;
+    }
     const reader = new FileReader();
+    reader.onerror = () => showNotification(t('errImportFailed'), 'error');
     reader.onload = (ev) => {
       try {
         const parsed = JSON.parse(ev.target.result);
@@ -53,10 +60,28 @@ export function triggerImport(mode = 'merge') {
         if (mode === 'replace' && next.stats) state.set('stats', next.stats);
         showNotification(t('notificationImported'));
       } catch (err) {
-        showNotification('Import failed: ' + err.message, 'error');
+        // The raw parser message ("Unexpected token < in JSON at position 0")
+        // means nothing to a user; keep it for the console only.
+        console.warn('Import failed:', err);
+        showNotification(t('errImportFailed'), 'error');
       }
     };
     reader.readAsText(file);
   });
   input.click();
+}
+
+// Asks which import mode to use, wiring up the merge/replace strings that were
+// already translated but unreachable from the UI. Returns null when cancelled.
+export function promptImportMode() {
+  const message =
+    `${t('importPrompt')}\n` +
+    `1 = ${t('btnMerge')} (${t('importMergeDesc')})\n` +
+    `2 = ${t('btnReplace')} (${t('importReplaceDesc')})`;
+  const answer = prompt(message, '1');
+  if (answer === null) return null;
+  const choice = answer.trim();
+  if (choice === '1') return 'merge';
+  if (choice === '2') return 'replace';
+  return null;
 }

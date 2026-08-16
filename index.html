@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'">
-  <meta name="theme-color" content="#4a90e2">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; manifest-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'">
+  <meta name="theme-color" content="#2c6cb0">
   <meta name="description" content="متصفح إيموجي ثنائي اللغة (عربي/إنجليزي) مع البحث والمفضلة والمجموعات المخصصة وإحصائيات الاستخدام">
   <meta name="keywords" content="emoji, إيموجي, بحث, ابتسامات, رموز, نسخ">
   <meta property="og:title" content="متصفح الإيموجي - Emoji Browser">
@@ -35,61 +35,63 @@
     <div class="header-content">
       <h1 id="mainTitle" data-i18n="mainTitle">متصفح الإيموجي 😊</h1>
       <div class="controls toolbar">
-        <button class="theme-toggle icon-btn" id="themeToggle" aria-label="Toggle theme" title="T">🌙</button>
-        <button class="lang-toggle" id="langToggle" aria-label="Toggle language" title="L">English</button>
-        <button class="btn-ghost icon-btn" id="selectModeBtn" data-i18n-aria="btnSelectMode" title="S">☑️</button>
-        <button class="btn-ghost icon-btn" id="statsBtn" data-i18n-aria="btnStats">📊</button>
-        <button class="btn-ghost icon-btn" id="exportBtn" data-i18n-aria="btnExport">💾</button>
-        <button class="btn-ghost icon-btn" id="importBtn" data-i18n-aria="btnImport">📥</button>
-        <button class="btn-ghost" id="installBtn" style="display:none;" data-i18n="btnInstall">تثبيت</button>
+        <button class="theme-toggle icon-btn" id="themeToggle" data-i18n-aria="ariaThemeToggle" aria-label="تبديل السمة" title="T">🌙</button>
+        <button class="lang-toggle" id="langToggle" data-i18n-aria="ariaLangToggle" aria-label="تبديل اللغة" title="L">English</button>
+        <button class="btn-ghost icon-btn" id="selectModeBtn" data-i18n-aria="btnSelectMode" aria-label="تحديد متعدد" title="S">☑️</button>
+        <button class="btn-ghost icon-btn" id="statsBtn" data-i18n-aria="btnStats" aria-label="الإحصائيات">📊</button>
+        <button class="btn-ghost icon-btn" id="exportBtn" data-i18n-aria="btnExport" aria-label="تصدير">💾</button>
+        <button class="btn-ghost icon-btn" id="importBtn" data-i18n-aria="btnImport" aria-label="استيراد">📥</button>
+        <button class="btn-ghost" id="installBtn" hidden data-i18n="btnInstall">تثبيت</button>
       </div>
     </div>
   </header>
 
   <div class="container" id="mainView" role="main">
-    <section class="search-section" aria-label="Search">
+    <section class="search-section" data-i18n-aria="ariaSearchSection" aria-label="البحث والتصفية">
       <div class="search-container">
         <input type="text" id="searchInput" data-i18n-placeholder="searchPlaceholder"
-               placeholder="ابحث عن إيموجي..." aria-label="Search emojis">
+               placeholder="ابحث عن إيموجي..." data-i18n-aria="ariaSearchInput" aria-label="ابحث عن إيموجي">
         <button id="searchBtn" data-i18n="searchBtn">بحث</button>
       </div>
-      <div class="categories" id="categories" role="tablist" aria-label="Categories"></div>
-      <div class="categories" id="collectionsBar" style="display:none;" aria-label="Collections"></div>
-      <div style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+      <div class="categories" id="categories" role="tablist" data-i18n-aria="ariaCategories" aria-label="التصنيفات"></div>
+      <div class="categories" id="collectionsBar" hidden data-i18n-aria="ariaCollections" aria-label="المجموعات"></div>
+      <div class="toolbar-row">
         <button class="btn-ghost" id="newCollectionBtn" data-i18n="btnNewCollection">+ مجموعة جديدة</button>
       </div>
     </section>
 
-    <section id="recentSection" style="display:none;" aria-label="Recently used">
+    <section id="recentSection" hidden data-i18n-aria="ariaRecentSection" aria-label="المستخدمة مؤخراً">
       <h2 class="section-title" id="recentTitle" data-i18n="recentTitle">المستخدمة مؤخراً</h2>
       <div class="emoji-grid" id="recentEmojis" role="grid"></div>
     </section>
 
-    <section id="favoritesSection" style="display:none;" aria-label="Favorites">
+    <section id="favoritesSection" hidden data-i18n-aria="ariaFavoritesSection" aria-label="المفضلة">
       <h2 class="section-title" id="favoritesTitle" data-i18n="favoritesTitle">المفضلة</h2>
       <div class="emoji-grid" id="favoriteEmojis" role="grid"></div>
     </section>
 
-    <section aria-label="All emojis">
+    <section data-i18n-aria="ariaAllSection" aria-label="جميع الإيموجي">
       <h2 class="section-title" id="allEmojisTitle" data-i18n="allEmojisTitle">جميع الإيموجي</h2>
       <div class="emoji-grid" id="emojiGrid" role="grid"></div>
     </section>
   </div>
 
-  <div class="container" id="statsView" style="display:none;" role="main">
+  <div class="container" id="statsView" hidden role="region" data-i18n-aria="ariaStatsView" aria-label="إحصائيات الاستخدام">
     <h2 class="section-title">
       <span data-i18n="statsTitle">إحصائيات الاستخدام</span>
+      <button class="btn-ghost" id="statsBackBtn" data-i18n="backToHome">العودة للرئيسية</button>
     </h2>
+    <div id="statsContent"></div>
   </div>
 
   <div class="modal" id="emojiModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-hidden="true">
     <div class="modal-content">
       <div class="modal-header">
         <h2 id="modalTitle" data-i18n="modalTitle">تفاصيل الإيموجي</h2>
-        <button class="close-btn" id="closeModal" data-i18n-aria="closeBtn" aria-label="Close">&times;</button>
+        <button class="close-btn" id="closeModal" data-i18n-aria="closeBtn" aria-label="إغلاق">&times;</button>
       </div>
       <div class="modal-emoji" id="modalEmoji"></div>
-      <div id="skinToneRow" style="display:none;"></div>
+      <div id="skinToneRow" hidden></div>
       <div class="emoji-info">
         <div class="emoji-info-label" id="labelArName" data-i18n="labelArName">الاسم بالعربي:</div>
         <div class="emoji-info-value" id="emojiArName"></div>
@@ -106,7 +108,7 @@
         <div class="emoji-info-label" id="labelDesc" data-i18n="labelDesc">الوصف:</div>
         <div class="emoji-info-value" id="emojiDesc"></div>
       </div>
-      <div class="emoji-info" id="keywordsRow" style="display:none;">
+      <div class="emoji-info" id="keywordsRow" hidden>
         <div class="emoji-info-label" data-i18n="labelKeywords">كلمات مفتاحية:</div>
         <div class="emoji-info-value" id="emojiKeywords"></div>
       </div>
@@ -122,9 +124,9 @@
     </div>
   </div>
 
-  <div class="selection-bar" id="selectionBar" role="region" aria-label="Selection actions">
-    <span id="selectedCount">0 selected</span>
-    <select id="separatorSelect" class="btn-secondary" style="padding: 6px;">
+  <div class="selection-bar" id="selectionBar" role="region" data-i18n-aria="ariaSelectionBar" aria-label="إجراءات التحديد">
+    <span id="selectedCount">0</span>
+    <select id="separatorSelect" class="btn-secondary separator-select" data-i18n-aria="ariaSeparator" aria-label="الفاصل بين الإيموجي">
       <option value="none" data-i18n="sepNone">بدون</option>
       <option value="space" data-i18n="sepSpace">مسافة</option>
       <option value="newline" data-i18n="sepNewline">سطر جديد</option>
@@ -141,7 +143,7 @@
   <footer role="contentinfo">
     <div class="developer-info">
       <p>تطوير: عبدالكريم العبود | <a href="mailto:abo.saleh.g@gmail.com">abo.saleh.g@gmail.com</a></p>
-      <p>© 2024 Emoji Browser 😊 - All Rights Reserved</p>
+      <p><span lang="en">&copy; 2025 Emoji Browser 😊 &mdash; All Rights Reserved</span></p>
     </div>
   </footer>
 </body>

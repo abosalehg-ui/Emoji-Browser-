@@ -1,9 +1,8 @@
 import { toBase64Url, fromBase64Url, copyText } from './utils.js';
-import { t } from './i18n.js';
+import { t, getLang } from './i18n.js';
 import { showNotification } from './notify.js';
 import * as state from './state.js';
 import { createCollection, getCollectionName } from './collections.js';
-import { getLang } from './i18n.js';
 
 export function buildShareUrl(collection) {
   const payload = {
@@ -19,7 +18,7 @@ export function buildShareUrl(collection) {
 export async function shareCollection(collection) {
   const url = buildShareUrl(collection);
   if (url.length > 2000) {
-    showNotification('Collection too large to share via URL', 'error');
+    showNotification(t('errCollectionTooLarge'), 'error');
     return;
   }
   if (navigator.share) {
@@ -50,8 +49,9 @@ export function parseShareUrl() {
 }
 
 // Shared payloads come from untrusted URLs. Coerce every field to a known,
-// safe shape before it ever reaches state or the DOM.
-function sanitizeSharePayload(raw) {
+// safe shape before it ever reaches state or the DOM. Exported so the
+// sanitizer can be tested directly rather than only through window.location.
+export function sanitizeSharePayload(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const name = raw.n && typeof raw.n === 'object' ? raw.n : {};
   const emojis = Array.isArray(raw.e)

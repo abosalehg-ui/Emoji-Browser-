@@ -2,7 +2,7 @@
 // Validates the emoji dataset: required fields, category consistency,
 // cross-file uniqueness, and precache-manifest coverage.
 // Exits non-zero on any error so it can gate CI.
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 
@@ -42,11 +42,29 @@ for (const cat of cats) {
 
 // Precache manifest must list files that actually exist on disk.
 const manifest = read('data/manifest.json');
+const listed = new Set();
 for (const f of manifest.files) {
   const rel = f.replace(/^\.\//, '');
-  if (rel === '' ) continue; // "./" is the app root, not a file
+  if (rel === '') continue; // "./" is the app root, not a file
+  listed.add(rel);
   if (!existsSync(resolve(root, rel))) {
     errors.push(`Precache manifest lists missing file: ${f}`);
+  }
+}
+
+// ...and the reverse: every shipped module/stylesheet must be precached. A
+// single missing entry makes its ES-module import 504 offline, which fails the
+// whole module graph and leaves a blank page — so this direction is the one
+// that actually protects the offline guarantee.
+for (const [dir, ext] of [
+  ['scripts', /\.js$/],
+  ['styles', /\.css$/],
+]) {
+  for (const f of readdirSync(resolve(root, dir), { withFileTypes: true })) {
+    if (!f.isFile() || !ext.test(f.name)) continue;
+    if (!listed.has(`${dir}/${f.name}`)) {
+      errors.push(`File shipped but not precached: ${dir}/${f.name}`);
+    }
   }
 }
 

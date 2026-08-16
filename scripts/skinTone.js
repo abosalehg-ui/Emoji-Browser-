@@ -19,10 +19,6 @@ export function applyTone(emoji, toneId) {
   return emoji + tone.modifier;
 }
 
-export function getTone(toneId) {
-  return TONES.find((t) => t.id === toneId) || TONES[0];
-}
-
 export function supports(emojiObj) {
   return Boolean(emojiObj && emojiObj.skinToneBase);
 }

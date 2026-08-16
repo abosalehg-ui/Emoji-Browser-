@@ -5,10 +5,11 @@
   --text-primary: #e0e0e0;
   --text-secondary: #a0a0a0;
   --border-color: #404040;
-  --accent-color: #5b9fd8;
-  --accent-hover: #4a8bc2;
+  --accent-color: #1f5a99;
+  --accent-hover: #17456f;
   --shadow: rgba(0, 0, 0, 0.3);
   --emoji-hover: #2a3a4a;
+  --chip-count-bg: #3a3a3a;
 }
 
 [data-theme='sepia'] {
@@ -18,10 +19,11 @@
   --text-primary: #5b4636;
   --text-secondary: #8a6f5a;
   --border-color: #d4c5a9;
-  --accent-color: #b07d3a;
-  --accent-hover: #8c5f28;
+  --accent-color: #8c5f28;
+  --accent-hover: #6d4a1e;
   --shadow: rgba(91, 70, 54, 0.15);
   --emoji-hover: #f7e9c3;
+  --chip-count-bg: #e3d6b7;
 }
 
 [data-theme='contrast'] {
@@ -31,10 +33,18 @@
   --text-primary: #ffffff;
   --text-secondary: #ffff00;
   --border-color: #ffffff;
+  /* Bright fills with dark text: keeps accent borders visible on the black
+     background while still clearing AA for button labels (black on #00ffff is
+     16.0:1, on #00ff66 14.6:1, on #ff6b6b 8.9:1). */
   --accent-color: #00ffff;
   --accent-hover: #00cccc;
+  --on-accent: #000000;
   --shadow: rgba(255, 255, 255, 0.3);
   --emoji-hover: #1a1a1a;
+  --chip-count-bg: #262626;
+  --success: #00ff66;
+  --danger: #ff6b6b;
+  --danger-hover: #ff9494;
 }
 
 [data-theme='contrast'] .emoji-card,
@@ -49,6 +59,10 @@
   outline-color: #ffff00;
 }
 
+/* The "auto" theme follows the OS. setTheme() writes data-theme="auto"
+   verbatim so this block can apply; under a light OS preference the :root
+   defaults in tokens.css already give the light palette, so only the dark case
+   needs stating. Keep these values identical to [data-theme='dark'] above. */
 @media (prefers-color-scheme: dark) {
   :root[data-theme='auto'] {
     --bg-primary: #1a1a1a;
@@ -57,9 +71,10 @@
     --text-primary: #e0e0e0;
     --text-secondary: #a0a0a0;
     --border-color: #404040;
-    --accent-color: #5b9fd8;
-    --accent-hover: #4a8bc2;
+    --accent-color: #1f5a99;
+    --accent-hover: #17456f;
     --shadow: rgba(0, 0, 0, 0.3);
     --emoji-hover: #2a3a4a;
+    --chip-count-bg: #3a3a3a;
   }
 }

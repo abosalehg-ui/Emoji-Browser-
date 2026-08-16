@@ -20,6 +20,7 @@
 
   .emoji-card {
     padding: var(--space-md);
+    contain-intrinsic-size: auto 144px;
   }
 
   .emoji-icon {
@@ -67,6 +68,10 @@
 @media (max-width: 480px) {
   .emoji-grid {
     grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+
+  .emoji-card {
+    contain-intrinsic-size: auto 132px;
   }
 
   .emoji-icon {

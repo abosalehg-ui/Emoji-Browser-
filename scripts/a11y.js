@@ -38,6 +38,11 @@ export function setupRovingTabindex(gridSelector) {
         next = cards.length - 1;
         break;
     }
+    if (next === idx) return;
+    // Move the single tab stop along with focus — that is what makes this a
+    // roving tabindex rather than 1358 individually tabbable cards.
+    cards[idx].setAttribute('tabindex', '-1');
+    cards[next].setAttribute('tabindex', '0');
     cards[next].focus();
   });
 }
