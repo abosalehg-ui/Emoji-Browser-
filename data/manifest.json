@@ -1,5 +1,5 @@
 {
-  "version": "2.0.0",
+  "version": "2.1.0",
   "files": [
     "./",
     "./index.html",
@@ -14,6 +14,8 @@
     "./styles/animations.css",
     "./styles/responsive.css",
     "./scripts/main.js",
+    "./scripts/views.js",
+    "./scripts/prefs.js",
     "./scripts/state.js",
     "./scripts/storage.js",
     "./scripts/i18n.js",

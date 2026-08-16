@@ -5,13 +5,22 @@
   --text-primary: #333333;
   --text-secondary: #666666;
   --border-color: #e0e0e0;
-  --accent-color: #4a90e2;
-  --accent-hover: #357abd;
+  /* Every one of these carries white text somewhere in the UI, so each is
+     picked to clear WCAG AA (4.5:1) against #fff at the 14px body size:
+     accent 4.6:1, success 4.9:1, danger 5.9:1. */
+  --accent-color: #2c6cb0;
+  --accent-hover: #21548c;
+  /* Text drawn on top of accent/success/danger fills. Themed rather than
+     hardcoded to white so the high-contrast theme can flip to dark text on
+     bright fills instead of being forced into dark-on-dark. */
+  --on-accent: #ffffff;
   --shadow: rgba(0, 0, 0, 0.1);
   --emoji-hover: #f0f7ff;
-  --success: #4caf50;
-  --danger: #e57373;
-  --warning: #ffb74d;
+  --success: #2e7d32;
+  --danger: #c62828;
+  --danger-hover: #9b1c1c;
+  --warning: #8a5300;
+  --chip-count-bg: #e6e6e6;
 
   --radius-sm: 4px;
   --radius-md: 6px;
@@ -24,7 +33,13 @@
   --space-lg: 20px;
   --space-xl: 30px;
 
-  --font-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  /* system-ui first so each platform supplies its own well-hinted Arabic face
+     (SF Arabic on Apple, Noto Naskh on Android) — Geneva and Verdana carry no
+     Arabic glyphs at all, so the previous stack fell through to a generic
+     sans-serif on most non-Windows devices. No webfont: zero-dependency. */
+  --font-base:
+    system-ui, -apple-system, 'Segoe UI', 'Noto Sans Arabic', 'IBM Plex Sans Arabic', 'Dubai',
+    Tahoma, sans-serif;
   --transition-fast: 0.15s ease;
   --transition-base: 0.3s ease;
 }

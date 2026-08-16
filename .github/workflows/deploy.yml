@@ -24,9 +24,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      # Publish only the files the app actually serves. Uploading the
+      # repository root also shipped package.json, the test suite, and the
+      # tooling configs to the public site.
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          cp index.html offline.html manifest.webmanifest sw.js LICENSE _site/
+          cp -r styles scripts data assets _site/
+          rm -rf _site/scripts/tools
       - uses: actions/upload-pages-artifact@v3
         with:
-          # The app is fully static; publish the repository root as-is.
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

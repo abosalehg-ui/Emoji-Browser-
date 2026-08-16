@@ -35,7 +35,16 @@ export function resetStats() {
   state.set('stats', { counts: {}, firstSeen: {}, lastUsed: {} });
 }
 
+function statCard(titleKey, value) {
+  return `
+      <div class="stats-card">
+        <h3>${escapeHtml(t(titleKey))}</h3>
+        <div class="stat-number">${escapeHtml(String(value))}</div>
+      </div>`;
+}
+
 export function renderDashboard(container) {
+  if (!container) return;
   const total = totalCopies();
   const unique = uniqueCount();
   const top = topUsed(10);
@@ -45,47 +54,50 @@ export function renderDashboard(container) {
 
   container.innerHTML = `
     <div class="stats-section">
-      <div class="stats-card">
-        <h3>${t('statsTotalCopies')}</h3>
-        <div class="stat-number">${total}</div>
-      </div>
-      <div class="stats-card">
-        <h3>${t('statsUniqueEmojis')}</h3>
-        <div class="stat-number">${unique}</div>
-      </div>
-      <div class="stats-card">
-        <h3>${t('statsFavCount')}</h3>
-        <div class="stat-number">${favCount}</div>
-      </div>
-      <div class="stats-card">
-        <h3>${t('statsCollectionsCount')}</h3>
-        <div class="stat-number">${collCount}</div>
-      </div>
+      ${statCard('statsTotalCopies', total)}
+      ${statCard('statsUniqueEmojis', unique)}
+      ${statCard('statsFavCount', favCount)}
+      ${statCard('statsCollectionsCount', collCount)}
     </div>
     <div class="stats-card">
-      <h3>${t('statsTopUsed')}</h3>
+      <h3>${escapeHtml(t('statsTopUsed'))}</h3>
       <div id="topUsedChart"></div>
     </div>
-    <div style="margin-top: 20px; text-align: center;">
-      <button class="btn btn-danger" id="resetStatsBtn">${t('btnReset')}</button>
+    <div class="stats-actions">
+      <button class="btn btn-danger" id="resetStatsBtn">${escapeHtml(t('btnReset'))}</button>
     </div>
   `;
 
   const chart = container.querySelector('#topUsedChart');
   if (!top.length) {
-    chart.innerHTML = `<div class="empty-state" style="padding: 20px;">${escapeHtml(
-      t('emptyRecent')
-    )}</div>`;
+    const empty = document.createElement('div');
+    empty.className = 'grid-status';
+    empty.textContent = t('emptyRecent');
+    chart.appendChild(empty);
   } else {
+    // Counter keys come from persisted state, which an imported file can
+    // supply — build the row with DOM APIs so nothing is ever parsed as HTML,
+    // and set the bar width through CSSOM rather than a style attribute.
     top.forEach(([emoji, count]) => {
-      const pct = Math.max(2, (count / maxCount) * 100);
       const row = document.createElement('div');
       row.className = 'chart-bar';
-      row.innerHTML = `
-        <span class="bar-emoji">${emoji}</span>
-        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
-        <span class="bar-value">${count}</span>
-      `;
+
+      const label = document.createElement('span');
+      label.className = 'bar-emoji';
+      label.textContent = emoji;
+
+      const track = document.createElement('div');
+      track.className = 'bar-track';
+      const fill = document.createElement('div');
+      fill.className = 'bar-fill';
+      fill.style.width = `${Math.max(2, (count / maxCount) * 100)}%`;
+      track.appendChild(fill);
+
+      const value = document.createElement('span');
+      value.className = 'bar-value';
+      value.textContent = String(count);
+
+      row.append(label, track, value);
       chart.appendChild(row);
     });
   }

@@ -3,10 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Self-contained fallback page: no scripts at all, so script-src can stay
+       at 'none'. The retry control is a plain link back to the app root, which
+       replaces the inline onclick handler this page used to carry. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'unsafe-inline'; script-src 'none'; img-src 'self' data:; base-uri 'none'; object-src 'none'; form-action 'none'">
   <title>غير متصل - Offline</title>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, sans-serif;
+      font-family: system-ui, -apple-system, 'Segoe UI', 'Noto Sans Arabic', Tahoma, sans-serif;
       background: #f4f0e8;
       color: #333;
       display: flex;
@@ -20,24 +24,31 @@
     }
     .icon { font-size: 5em; margin-bottom: 20px; }
     h1 { margin-bottom: 10px; }
-    p { color: #666; margin-bottom: 30px; }
-    button {
+    p { color: #595959; margin-bottom: 30px; }
+    .retry {
+      display: inline-block;
       padding: 12px 24px;
-      background: #4a90e2;
-      color: white;
-      border: none;
+      background: #2c6cb0;
+      color: #fff;
       border-radius: 6px;
-      cursor: pointer;
       font-size: 16px;
+      text-decoration: none;
     }
-    button:hover { background: #357abd; }
+    .retry:hover { background: #21548c; }
+    .retry:focus-visible { outline: 3px solid #21548c; outline-offset: 2px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #1a1a1a; color: #e0e0e0; }
+      p { color: #a0a0a0; }
+      .retry { background: #1f5a99; }
+      .retry:hover { background: #17456f; }
+    }
   </style>
 </head>
 <body>
-  <div class="icon">📵</div>
+  <div class="icon" aria-hidden="true">📵</div>
   <h1>غير متصل بالإنترنت</h1>
   <p>يبدو أنك غير متصل. حاول العودة لاحقاً.</p>
-  <p>You appear to be offline. Try again later.</p>
-  <button onclick="location.reload()">إعادة المحاولة - Retry</button>
+  <p><span lang="en">You appear to be offline. Try again later.</span></p>
+  <a class="retry" href="./">إعادة المحاولة - <span lang="en">Retry</span></a>
 </body>
 </html>

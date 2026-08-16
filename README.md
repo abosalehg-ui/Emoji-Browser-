@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-2.0.0-orange)
+![Version](https://img.shields.io/badge/version-2.1.0-orange)
 ![Emojis](https://img.shields.io/badge/emojis-1358-brightgreen)
 ![Categories](https://img.shields.io/badge/categories-10-blue)
 ![Languages](https://img.shields.io/badge/i18n-Arabic%20%7C%20English-blue)
@@ -23,14 +23,17 @@
 
 - **1358 emojis** across **10 categories** (smileys, people, animals, nature, food, travel, activities, objects, symbols, flags).
 - **Bilingual UI** with full RTL/LTR switching (Arabic ⇄ English).
-- **Search** by Arabic name, English name, description, or keywords.
+- **Search** by Arabic name, English name, description, or keywords. Arabic queries are
+  normalized (hamza seats, ta marbuta, alef maqsura, tashkeel), so `كاس` finds `كأس`.
 - **Favorites** and **Recently used** (last 20), persisted locally.
 - **Custom collections** — create, rename, delete, and **share via URL**.
 - **Multi-select mode** — copy many emojis at once with a configurable separator.
 - **Skin-tone variants** for supported emojis.
 - **Usage statistics** dashboard (top used, totals) with a reset option.
-- **Import / export** your data as JSON (merge or replace).
-- **4 themes**: light, dark, sepia, high-contrast.
+- **Import / export** your data as JSON, choosing merge or replace on import.
+  Imported files are validated field by field before anything reaches storage.
+- **5 themes**: light, dark, sepia, high-contrast, and auto (follows the OS).
+  All themes meet WCAG AA contrast for text on filled controls.
 - **Keyboard shortcuts** and accessible grid navigation (arrow keys, focus trap, skip link).
 - **PWA**: installable and fully **offline-capable** via a service worker.
 - **Copy** as emoji, Unicode code point, or HTML entity.
@@ -74,6 +77,7 @@ sw.js                   Service worker (precache + runtime caching)
 manifest.webmanifest    PWA manifest
 scripts/                ES modules, one concern each
   main.js               Composition root / wiring
+  views.js              Category bar, collection chips, collection picker
   state.js              Central pub/sub store
   storage.js            localStorage load/save, schema migration, import/export
   search.js             Search + category filtering + index
@@ -83,7 +87,7 @@ scripts/                ES modules, one concern each
   prefs.js              Shared theme/language toggles
   theme.js, skinTone.js, favorites.js, recent.js, collections.js,
   selection.js, share.js, importExport.js, stats.js, shortcuts.js,
-  a11y.js, pwa.js, notify.js, utils.js
+  a11y.js, pwa.js, notify.js, prefs.js, utils.js
   tools/validate-data.mjs   Dataset & version validator
 styles/                 Token-based CSS (tokens, base, layout, components,
                         themes, rtl, animations, responsive)
@@ -122,6 +126,11 @@ The release version is kept identical in three places — `package.json`, `data/
 and the service worker's `CACHE_VERSION`. `validate:data` fails if they drift, which guarantees
 that every release invalidates the old offline cache. Bump all three together when releasing.
 
+`validate:data` also checks the precache list in both directions: every file it names must
+exist, **and** every `scripts/*.js` and `styles/*.css` on disk must be listed. A module missing
+from that list 504s offline, which fails the whole ES-module graph and leaves a blank page — so
+the reverse check is what actually protects the offline guarantee.
+
 ---
 
 ## 🌐 Browser support / دعم المتصفحات
@@ -137,6 +146,8 @@ Chrome/Edge 90+, Firefox 88+, Safari 14+.
 2. Run `npm run check` before submitting a PR.
 3. Add emojis by editing the relevant `data/emojis/<category>.json` file and running
    `npm run validate:data`.
+4. New modules and stylesheets must also be added to `data/manifest.json`; `validate:data`
+   fails otherwise.
 
 ---
 

@@ -1,9 +1,9 @@
 import * as state from './state.js';
 import { load, save } from './storage.js';
 import { setLang, applyTranslations, t, getLang } from './i18n.js';
-import { setTheme, themeIcon, getSystemTheme } from './theme.js';
+import { setTheme, themeIcon } from './theme.js';
 import { searchEmojis, filterByCategory, buildIndex, prepareSearch } from './search.js';
-import { renderGrid } from './render.js';
+import { renderGrid, updateFavoriteButtons, renderGridStatus } from './render.js';
 import { openEmojiModal, closeModal, copyEmojiFromModal } from './modal.js';
 import { toggleFavorite } from './favorites.js';
 import { addToRecent } from './recent.js';
@@ -13,6 +13,7 @@ import {
   renameCollection,
   getCollection,
   getCollectionName,
+  addManyToCollection,
 } from './collections.js';
 import {
   enterSelectMode,
@@ -28,13 +29,15 @@ import {
   importSharedCollection,
   clearShareParam,
 } from './share.js';
-import { downloadExport, triggerImport } from './importExport.js';
+import { downloadExport, triggerImport, promptImportMode } from './importExport.js';
 import { renderDashboard, recordUsage } from './stats.js';
 import { registerShortcuts } from './shortcuts.js';
 import { setupRovingTabindex } from './a11y.js';
 import { initPwa, promptInstall } from './pwa.js';
 import { toggleTheme, toggleLang } from './prefs.js';
-import { debounce, escapeHtml } from './utils.js';
+import { showNotification } from './notify.js';
+import { debounce } from './utils.js';
+import { renderCategoriesUI, renderCollectionsBar, pickCollection } from './views.js';
 
 // Shared handlers for every emoji grid (main, recent, favorites).
 const gridHandlers = {
@@ -48,30 +51,39 @@ const gridHandlers = {
 };
 
 async function loadEmojiData() {
-  try {
-    const catsRes = await fetch('./data/categories.json');
-    const cats = await catsRes.json();
-    state.set('categories', cats.categories);
+  const catsRes = await fetch('./data/categories.json');
+  if (!catsRes.ok) throw new Error(`categories.json: HTTP ${catsRes.status}`);
+  const cats = await catsRes.json();
+  state.set('categories', cats.categories);
 
-    const all = [];
-    const loadingPromises = cats.categories.map((cat) =>
+  const all = [];
+  const results = await Promise.all(
+    cats.categories.map((cat) =>
       fetch(`./data/emojis/${cat.id}.json`)
-        .then((r) => r.json())
+        .then((r) => {
+          if (!r.ok) throw new Error(`${cat.id}: HTTP ${r.status}`);
+          return r.json();
+        })
         .then((data) => {
           all.push(...data.emojis);
-          state.get('emojisLoaded').add(cat.id);
+          return true;
         })
-        .catch((err) => console.warn(`Failed to load ${cat.id}:`, err))
-    );
-    await Promise.all(loadingPromises);
-
-    prepareSearch(all);
-    state.set('emojis', all);
-    state.set('emojisByChar', buildIndex(all));
-    state.set('filtered', all);
-  } catch (err) {
-    console.error('Failed to load emoji data:', err);
+        .catch((err) => {
+          console.warn(`Failed to load ${cat.id}:`, err);
+          return false;
+        })
+    )
+  );
+  // Every category failing means the dataset is unusable, not merely partial.
+  if (!all.length) throw new Error('no emoji categories could be loaded');
+  if (results.includes(false)) {
+    showNotification(t('errorDataLoad'), 'error');
   }
+
+  prepareSearch(all);
+  state.set('emojis', all);
+  state.set('emojisByChar', buildIndex(all));
+  state.set('filtered', all);
 }
 
 function init() {
@@ -86,15 +98,12 @@ function init() {
   state.set('skinTone', persisted.prefs.skinTone);
 
   setLang(persisted.prefs.lang);
-  let initialTheme = persisted.prefs.theme;
-  if (initialTheme === 'auto') initialTheme = getSystemTheme();
-  setTheme(initialTheme);
+  setTheme(persisted.prefs.theme);
   applyTranslations();
 
   const themeBtn = document.getElementById('themeToggle');
-  if (themeBtn) themeBtn.textContent = themeIcon(initialTheme);
-  const langBtn = document.getElementById('langToggle');
-  if (langBtn) langBtn.textContent = persisted.prefs.lang === 'ar' ? 'English' : 'العربية';
+  if (themeBtn) themeBtn.textContent = themeIcon(persisted.prefs.theme);
+  updateLangButton();
 
   setupListeners();
   setupSubscriptions();
@@ -103,27 +112,32 @@ function init() {
       const inp = document.getElementById('searchInput');
       if (inp) inp.focus();
     },
-    onLangChange: () => {
-      applyTranslations();
-      updateLangButton();
-      renderCategoriesUI();
-      renderAllSections();
-    },
+    onLangChange: onLanguageChanged,
     onThemeChange: () => {},
     onStatsToggle: () => toggleStatsView(),
   });
 
-  loadEmojiData().then(() => {
-    renderCategoriesUI();
-    renderAllSections();
-    setupRovingTabindex('#emojiGrid');
+  renderGridStatus(document.getElementById('emojiGrid'), 'loading');
 
-    const shared = parseShareUrl();
-    if (shared) {
-      handleSharedCollection(shared);
-      clearShareParam();
-    }
-  });
+  loadEmojiData()
+    .then(() => {
+      renderCategoriesBar();
+      renderAllSections();
+      setupRovingTabindex('#emojiGrid');
+
+      const shared = parseShareUrl();
+      if (shared) {
+        handleSharedCollection(shared);
+        clearShareParam();
+      }
+    })
+    .catch((err) => {
+      // Previously this only reached the console, leaving the user staring at
+      // an empty grid with no explanation.
+      console.error('Failed to load emoji data:', err);
+      renderGridStatus(document.getElementById('emojiGrid'), 'errorDataLoad', true);
+      showNotification(t('errorDataLoad'), 'error');
+    });
 
   initPwa();
 }
@@ -133,9 +147,7 @@ function setupListeners() {
 
   document.getElementById('langToggle').addEventListener('click', () => {
     toggleLang();
-    updateLangButton();
-    renderCategoriesUI();
-    renderAllSections();
+    onLanguageChanged();
   });
 
   document.getElementById('closeModal').addEventListener('click', closeModal);
@@ -167,54 +179,66 @@ function setupListeners() {
   document.getElementById('selExit').addEventListener('click', exitSelectMode);
   document.getElementById('selCopy').addEventListener('click', copyAllSelected);
   document.getElementById('selClear').addEventListener('click', clearSelection);
-  document.getElementById('selAddToCollection').addEventListener('click', () => {
-    const sel = state.get('selected');
-    if (!sel.size) return;
-    const name = prompt(t('promptCollectionName'));
-    if (!name) return;
-    const coll = createCollection(name, [...sel]);
-    state.set('currentCollection', coll.id);
-    exitSelectMode();
-  });
+  document
+    .getElementById('selAddToCollection')
+    .addEventListener('click', addSelectionToCollection);
 
   document.getElementById('newCollectionBtn').addEventListener('click', () => {
     const name = prompt(t('promptCollectionName'));
     if (name) createCollection(name);
   });
   document.getElementById('exportBtn').addEventListener('click', downloadExport);
-  document.getElementById('importBtn').addEventListener('click', () => triggerImport('merge'));
-  document.getElementById('statsBtn').addEventListener('click', toggleStatsView);
-  document.getElementById('installBtn').addEventListener('click', promptInstall);
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      const modal = document.getElementById('emojiModal');
-      if (modal.classList.contains('show')) closeModal();
-    }
+  document.getElementById('importBtn').addEventListener('click', () => {
+    const mode = promptImportMode();
+    if (mode) triggerImport(mode);
   });
+  document.getElementById('statsBtn').addEventListener('click', toggleStatsView);
+  document.getElementById('statsBackBtn').addEventListener('click', toggleStatsView);
+  document.getElementById('installBtn').addEventListener('click', promptInstall);
 }
 
 function setupSubscriptions() {
-  const persistKeys = ['favorites', 'recent', 'collections', 'stats', 'prefs'];
-  persistKeys.forEach((key) => {
-    state.subscribe(key, () => {
-      save({
-        prefs: state.get('prefs'),
-        favorites: state.get('favorites'),
-        recent: state.get('recent'),
-        collections: state.get('collections'),
-        stats: state.get('stats'),
-      });
+  // localStorage writes are synchronous JSON.stringify over the whole blob;
+  // coalesce bursts (a rapid multi-select, say) into a single write.
+  const persist = debounce(() => {
+    save({
+      prefs: state.get('prefs'),
+      favorites: state.get('favorites'),
+      recent: state.get('recent'),
+      collections: state.get('collections'),
+      stats: state.get('stats'),
     });
+  }, 300);
+
+  ['favorites', 'recent', 'collections', 'stats', 'prefs'].forEach((key) => {
+    state.subscribe(key, persist);
   });
 
-  state.subscribe('favorites', () => renderAllSections());
+  // Patch the star in place rather than rebuilding 1358 cards, which used to
+  // discard scroll position and keyboard focus on every toggle.
+  state.subscribe('favorites', (favs) => {
+    updateFavoriteButtons(favs);
+    renderFavoritesSection();
+  });
   state.subscribe('recent', () => renderRecentSection());
-  state.subscribe('collections', () => renderCollectionsBar());
+  state.subscribe('collections', () => renderCollectionsUI());
   state.subscribe('selected', () => {
     refreshBar();
     refreshSelectedCards();
   });
+  state.subscribe('view', (view) => applyView(view));
+}
+
+function onLanguageChanged() {
+  applyTranslations();
+  updateLangButton();
+  renderCategoriesBar();
+  renderAllSections();
+  // The dashboard is built from t() at render time and carries no data-i18n
+  // hooks, so it has to be redrawn rather than re-translated in place.
+  if (state.get('view') === 'stats') {
+    renderDashboard(document.getElementById('statsContent'));
+  }
 }
 
 function updateLangButton() {
@@ -222,26 +246,49 @@ function updateLangButton() {
   if (btn) btn.textContent = getLang() === 'ar' ? 'English' : 'العربية';
 }
 
-function renderCategoriesUI() {
-  const container = document.getElementById('categories');
-  container.innerHTML = '';
-  const cats = state.get('categories');
-  const lang = getLang();
-  const current = state.get('currentCategory');
+function renderCategoriesBar() {
+  renderCategoriesUI(selectCategory);
+}
 
-  const allBtn = document.createElement('button');
-  allBtn.className = 'category-btn' + (current === 'all' ? ' active' : '');
-  allBtn.textContent = lang === 'ar' ? 'الكل' : 'All';
-  allBtn.addEventListener('click', () => selectCategory('all'));
-  container.appendChild(allBtn);
-
-  cats.forEach((cat) => {
-    const btn = document.createElement('button');
-    btn.className = 'category-btn' + (current === cat.id ? ' active' : '');
-    btn.innerHTML = `<span>${cat.icon}</span><span>${lang === 'ar' ? cat.ar : cat.en}</span>`;
-    btn.addEventListener('click', () => selectCategory(cat.id));
-    container.appendChild(btn);
+function renderCollectionsUI() {
+  renderCollectionsBar({
+    onOpen: (coll) => {
+      const current = state.get('currentCollection');
+      state.set('currentCollection', current === coll.id ? null : coll.id);
+      state.set('currentCategory', 'all');
+      performFilter();
+      renderCollectionsUI();
+      renderCategoriesBar();
+    },
+    onShare: (coll) => shareCollection(coll),
+    onRename: (coll) => {
+      const newName = prompt(t('promptRenameCollection'), getCollectionName(coll, getLang()));
+      if (newName) renameCollection(coll.id, newName);
+    },
+    onDelete: (coll) => {
+      if (confirm(t('confirmDelete'))) deleteCollection(coll.id);
+    },
   });
+}
+
+function addSelectionToCollection() {
+  const sel = state.get('selected');
+  if (!sel.size) return;
+  const target = pickCollection();
+  if (target === null) return;
+  if (target === 'new') {
+    const name = prompt(t('promptCollectionName'));
+    if (!name) return;
+    const coll = createCollection(name, [...sel]);
+    state.set('currentCollection', coll.id);
+  } else {
+    addManyToCollection(target, [...sel]);
+    state.set('currentCollection', target);
+    showNotification(t('notificationCollectionCreated'));
+  }
+  exitSelectMode();
+  performFilter();
+  renderCollectionsUI();
 }
 
 function selectCategory(catId) {
@@ -249,9 +296,12 @@ function selectCategory(catId) {
   state.set('currentCollection', null);
   const input = document.getElementById('searchInput');
   if (input) input.value = '';
+  // Clearing only the input left the previous term in the store, so the grid
+  // stayed filtered by a query the user could no longer see.
+  state.set('query', '');
   performFilter();
-  renderCategoriesUI();
-  renderCollectionsBar();
+  renderCategoriesBar();
+  renderCollectionsUI();
 }
 
 function performSearch() {
@@ -279,8 +329,7 @@ function performFilter() {
 }
 
 function renderMainGrid() {
-  const container = document.getElementById('emojiGrid');
-  renderGrid(container, state.get('filtered'), gridHandlers);
+  renderGrid(document.getElementById('emojiGrid'), state.get('filtered'), gridHandlers);
 }
 
 function renderRecentSection() {
@@ -289,10 +338,10 @@ function renderRecentSection() {
   const recent = state.get('recent');
   const byChar = state.get('emojisByChar');
   if (!recent.length || !byChar.size) {
-    section.style.display = 'none';
+    section.hidden = true;
     return;
   }
-  section.style.display = 'block';
+  section.hidden = false;
   const items = recent
     .slice(0, 10)
     .map((r) => byChar.get(r.e))
@@ -307,79 +356,20 @@ function renderFavoritesSection() {
   const favs = state.get('favorites');
   const byChar = state.get('emojisByChar');
   if (!favs.length || !byChar.size) {
-    section.style.display = 'none';
+    section.hidden = true;
     return;
   }
-  section.style.display = 'block';
+  section.hidden = false;
   const items = favs.map((c) => byChar.get(c)).filter(Boolean);
   renderGrid(container, items, gridHandlers);
   setupRovingTabindex('#favoriteEmojis');
-}
-
-function renderCollectionsBar() {
-  const bar = document.getElementById('collectionsBar');
-  if (!bar) return;
-  const colls = state.get('collections');
-  const lang = getLang();
-  const current = state.get('currentCollection');
-  bar.innerHTML = '';
-  if (!colls.length) {
-    bar.style.display = 'none';
-    return;
-  }
-  bar.style.display = 'flex';
-  colls.forEach((coll) => {
-    const chip = document.createElement('div');
-    chip.className = 'collection-chip' + (current === coll.id ? ' active' : '');
-    chip.style.borderColor = coll.color;
-    // Collection names may originate from untrusted sources (shared URLs,
-    // imported files). Render them via textContent to prevent XSS; only the
-    // static structure below is built from trusted strings.
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = getCollectionName(coll, lang) || 'Untitled';
-    chip.appendChild(nameSpan);
-    chip.insertAdjacentHTML(
-      'beforeend',
-      `
-      <span class="count">${coll.emojis.length}</span>
-      <button class="icon-btn" data-action="share" title="${escapeHtml(t('btnShare'))}"
-        style="background:transparent;color:inherit;padding:0;min-width:auto;min-height:auto;font-size:14px;">🔗</button>
-      <button class="icon-btn" data-action="rename" title="${escapeHtml(t('btnRename'))}"
-        style="background:transparent;color:inherit;padding:0;min-width:auto;min-height:auto;font-size:14px;">✏️</button>
-      <button class="icon-btn" data-action="delete" title="${escapeHtml(t('btnDelete'))}"
-        style="background:transparent;color:inherit;padding:0;min-width:auto;min-height:auto;font-size:14px;">🗑️</button>
-    `
-    );
-    chip.addEventListener('click', (e) => {
-      const action = e.target.closest('[data-action]');
-      if (action) {
-        e.stopPropagation();
-        const act = action.getAttribute('data-action');
-        if (act === 'delete') {
-          if (confirm(t('confirmDelete'))) deleteCollection(coll.id);
-        } else if (act === 'rename') {
-          const newName = prompt(t('promptRenameCollection'), getCollectionName(coll, lang));
-          if (newName) renameCollection(coll.id, newName);
-        } else if (act === 'share') {
-          shareCollection(coll);
-        }
-        return;
-      }
-      state.set('currentCollection', current === coll.id ? null : coll.id);
-      state.set('currentCategory', 'all');
-      performFilter();
-      renderCollectionsBar();
-      renderCategoriesUI();
-    });
-    bar.appendChild(chip);
-  });
 }
 
 function renderAllSections() {
   renderMainGrid();
   renderRecentSection();
   renderFavoritesSection();
-  renderCollectionsBar();
+  renderCollectionsUI();
 }
 
 function refreshSelectedCards() {
@@ -394,18 +384,21 @@ function refreshSelectedCards() {
   });
 }
 
-let statsView = false;
 function toggleStatsView() {
-  statsView = !statsView;
+  state.set('view', state.get('view') === 'stats' ? 'main' : 'stats');
+}
+
+function applyView(view) {
   const statsSection = document.getElementById('statsView');
   const mainSections = document.getElementById('mainView');
-  if (statsView) {
-    statsSection.style.display = 'block';
-    mainSections.style.display = 'none';
-    renderDashboard(statsSection);
+  const showStats = view === 'stats';
+  statsSection.hidden = !showStats;
+  mainSections.hidden = showStats;
+  if (showStats) {
+    renderDashboard(document.getElementById('statsContent'));
+    document.getElementById('statsBackBtn').focus();
   } else {
-    statsSection.style.display = 'none';
-    mainSections.style.display = 'block';
+    document.getElementById('statsBtn').focus();
   }
 }
 

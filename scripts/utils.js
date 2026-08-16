@@ -52,9 +52,17 @@ export function fromBase64Url(str) {
   return new TextDecoder().decode(bytes);
 }
 
+// A record's `unicode` field may hold several space-separated code points
+// (e.g. "U+2764 U+FE0F" for ❤️ — 319 of the 1358 records look like this).
+// Each one becomes its own entity; emitting a single entity for the whole
+// string produces invalid HTML.
 export function htmlEntity(unicode) {
-  const codePoint = unicode.replace(/^U\+/, '');
-  return `&#x${codePoint};`;
+  return String(unicode)
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((cp) => `&#x${cp.replace(/^U\+/i, '')};`)
+    .join('');
 }
 
 export function emojiToUnicode(emoji) {
@@ -63,15 +71,6 @@ export function emojiToUnicode(emoji) {
     codepoints.push('U+' + ch.codePointAt(0).toString(16).toUpperCase());
   }
   return codepoints.join(' ');
-}
-
-export function formatDate(ts, lang = 'ar') {
-  const d = new Date(ts);
-  return d.toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
 }
 
 export function escapeHtml(s) {

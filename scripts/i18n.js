@@ -73,7 +73,31 @@ export const translations = {
     themeDark: 'داكن',
     themeSepia: 'سيبيا',
     themeContrast: 'تباين عالي',
+    themeAuto: 'تلقائي',
     closeBtn: 'إغلاق',
+    loading: 'جارٍ التحميل...',
+    errorDataLoad: 'تعذّر تحميل بيانات الإيموجي. تحقق من اتصالك ثم أعد المحاولة.',
+    errImportFailed: 'فشل الاستيراد: الملف غير صالح أو تالف.',
+    errFileTooLarge: 'الملف كبير جدًا (الحد الأقصى 5 ميجابايت).',
+    errCollectionTooLarge: 'المجموعة أكبر من أن تُشارَك عبر رابط.',
+    errNoCollections: 'ما فيه مجموعات. أنشئ واحدة أولاً.',
+    // Screen-reader labels. The UI defaults to Arabic, so these must be
+    // translated like any other visible string.
+    ariaThemeToggle: 'تبديل السمة',
+    ariaLangToggle: 'تبديل اللغة',
+    ariaSearchInput: 'ابحث عن إيموجي',
+    ariaSearchSection: 'البحث والتصفية',
+    ariaCategories: 'التصنيفات',
+    ariaCollections: 'المجموعات',
+    ariaRecentSection: 'المستخدمة مؤخراً',
+    ariaFavoritesSection: 'المفضلة',
+    ariaAllSection: 'جميع الإيموجي',
+    ariaSelectionBar: 'إجراءات التحديد',
+    ariaAddFav: 'إضافة إلى المفضلة',
+    ariaRemoveFav: 'إزالة من المفضلة',
+    ariaSeparator: 'الفاصل بين الإيموجي',
+    ariaCollectionChip: 'عرض المجموعة',
+    ariaStatsView: 'إحصائيات الاستخدام',
     skipToGrid: 'تخطي إلى شبكة الإيموجي',
     shortcutsHelp: 'اختصارات لوحة المفاتيح',
     shortcutSearch: 'تركيز البحث',
@@ -162,7 +186,29 @@ export const translations = {
     themeDark: 'Dark',
     themeSepia: 'Sepia',
     themeContrast: 'High Contrast',
+    themeAuto: 'Auto',
     closeBtn: 'Close',
+    loading: 'Loading...',
+    errorDataLoad: 'Could not load emoji data. Check your connection and retry.',
+    errImportFailed: 'Import failed: the file is invalid or corrupted.',
+    errFileTooLarge: 'File is too large (5 MB maximum).',
+    errCollectionTooLarge: 'Collection is too large to share via URL.',
+    errNoCollections: 'No collections yet. Create one first.',
+    ariaThemeToggle: 'Toggle theme',
+    ariaLangToggle: 'Toggle language',
+    ariaSearchInput: 'Search emojis',
+    ariaSearchSection: 'Search and filter',
+    ariaCategories: 'Categories',
+    ariaCollections: 'Collections',
+    ariaRecentSection: 'Recently used',
+    ariaFavoritesSection: 'Favorites',
+    ariaAllSection: 'All emojis',
+    ariaSelectionBar: 'Selection actions',
+    ariaAddFav: 'Add to favorites',
+    ariaRemoveFav: 'Remove from favorites',
+    ariaSeparator: 'Separator between emojis',
+    ariaCollectionChip: 'Show collection',
+    ariaStatsView: 'Usage statistics',
     skipToGrid: 'Skip to emoji grid',
     shortcutsHelp: 'Keyboard Shortcuts',
     shortcutSearch: 'Focus search',
@@ -179,10 +225,14 @@ export const translations = {
   },
 };
 
-let currentLang = 'ar';
+export const DEFAULT_LANG = 'ar';
+let currentLang = DEFAULT_LANG;
 
+// Defence in depth: storage.js already rejects unknown languages, but t() is
+// called from everywhere and must never be the thing that takes the app down.
 export function t(key) {
-  return translations[currentLang][key] || key;
+  const table = translations[currentLang] || translations[DEFAULT_LANG];
+  return table[key] || translations[DEFAULT_LANG][key] || key;
 }
 
 export function getLang() {
@@ -190,9 +240,10 @@ export function getLang() {
 }
 
 export function setLang(lang) {
-  currentLang = lang;
-  document.documentElement.setAttribute('lang', lang);
-  document.documentElement.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  currentLang = translations[lang] ? lang : DEFAULT_LANG;
+  document.documentElement.setAttribute('lang', currentLang);
+  document.documentElement.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+  return currentLang;
 }
 
 export function applyTranslations() {

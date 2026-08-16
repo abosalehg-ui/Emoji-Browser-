@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { exportData, importData, defaultState } from '../scripts/storage.js';
+import {
+  exportData,
+  importData,
+  defaultState,
+  normalize,
+  safePrefs,
+  safeCollection,
+} from '../scripts/storage.js';
 
 describe('exportData', () => {
   it('wraps state with schema tag and timestamp', () => {
@@ -62,5 +69,109 @@ describe('defaultState', () => {
     const s = defaultState();
     expect(s.schemaVersion).toBe(1);
     expect(s.collections).toEqual([]);
+  });
+});
+
+// A partially-written or hand-edited localStorage blob used to be returned
+// verbatim, and the first `persisted.prefs.lang` read then took down boot.
+describe('normalize', () => {
+  it('fills a blob that only carries a schema version', () => {
+    const out = normalize({ schemaVersion: 1 });
+    expect(out.prefs).toEqual(defaultState().prefs);
+    expect(out.favorites).toEqual([]);
+    expect(out.collections).toEqual([]);
+    expect(out.stats).toEqual({ counts: {}, firstSeen: {}, lastUsed: {} });
+  });
+
+  it('survives entirely bogus input', () => {
+    for (const bad of [null, undefined, 'x', 7, []]) {
+      expect(normalize(bad).prefs.lang).toBe('ar');
+    }
+  });
+
+  it('replaces wrong-typed collections with an empty list', () => {
+    expect(normalize({ collections: 'nope' }).collections).toEqual([]);
+    expect(normalize({ collections: [null, 5, {}] }).collections).toEqual([]);
+  });
+
+  it('drops recent entries without an emoji char', () => {
+    const out = normalize({ recent: [{ e: '😀', t: 1 }, { t: 2 }, null] });
+    expect(out.recent).toEqual([{ e: '😀', t: 1 }]);
+  });
+});
+
+describe('safePrefs', () => {
+  it('drops an unknown language rather than letting it reach t()', () => {
+    expect(safePrefs({ lang: 'fr' })).toEqual({});
+    expect(safePrefs({ lang: 'en' })).toEqual({ lang: 'en' });
+  });
+
+  it('drops an unknown theme and skin tone', () => {
+    expect(safePrefs({ theme: '<script>', skinTone: 'neon' })).toEqual({});
+    expect(safePrefs({ theme: 'sepia', skinTone: 'dark' })).toEqual({
+      theme: 'sepia',
+      skinTone: 'dark',
+    });
+  });
+
+  it('tolerates non-object input', () => {
+    expect(safePrefs(null)).toEqual({});
+    expect(safePrefs('x')).toEqual({});
+  });
+});
+
+describe('safeCollection', () => {
+  it('rejects entries without a string id', () => {
+    expect(safeCollection(null)).toBeNull();
+    expect(safeCollection({})).toBeNull();
+    expect(safeCollection({ id: 7 })).toBeNull();
+  });
+
+  it('guarantees an emojis array so renderers cannot read length of undefined', () => {
+    expect(safeCollection({ id: 'a' }).emojis).toEqual([]);
+    expect(safeCollection({ id: 'a', emojis: 'nope' }).emojis).toEqual([]);
+  });
+
+  it('caps the emoji list and de-duplicates it', () => {
+    const c = safeCollection({ id: 'a', emojis: [...Array(900).fill('😀'), '🐶'] });
+    expect(c.emojis).toEqual(['😀', '🐶']);
+  });
+
+  it('falls back to a safe color when the value is not a hex literal', () => {
+    expect(safeCollection({ id: 'a', color: 'url(evil)' }).color).toBe('#2c6cb0');
+    expect(safeCollection({ id: 'a', color: '#abcdef' }).color).toBe('#abcdef');
+  });
+});
+
+describe('importData validation', () => {
+  const current = defaultState();
+
+  it('ignores an invalid prefs.lang from an imported file', () => {
+    const next = importData(
+      { schema: 'emoji-browser/v1', prefs: { lang: 'fr', theme: 'dark' } },
+      current,
+      'merge'
+    );
+    expect(next.prefs.lang).toBe('ar');
+    expect(next.prefs.theme).toBe('dark');
+  });
+
+  it('drops malformed collections instead of storing them', () => {
+    const next = importData(
+      { schema: 'emoji-browser/v1', collections: [{ id: 'ok' }, null, { emojis: [] }] },
+      current,
+      'replace'
+    );
+    expect(next.collections).toHaveLength(1);
+    expect(next.collections[0].emojis).toEqual([]);
+  });
+
+  it('drops non-string favorites', () => {
+    const next = importData(
+      { schema: 'emoji-browser/v1', favorites: ['😀', 3, null, {}] },
+      current,
+      'replace'
+    );
+    expect(next.favorites).toEqual(['😀']);
   });
 });

@@ -5,7 +5,7 @@
 .copy-btn {
   padding: 10px 18px;
   background-color: var(--accent-color);
-  color: white;
+  color: var(--on-accent);
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -41,10 +41,11 @@
 
 .btn-danger {
   background-color: var(--danger);
+  color: var(--on-accent);
 }
 
 .btn-danger:hover {
-  background-color: #c44e4e;
+  background-color: var(--danger-hover);
 }
 
 .btn-ghost {
@@ -86,7 +87,8 @@
 }
 
 .category-btn {
-  padding: var(--space-sm) var(--space-lg);
+  padding: 12px var(--space-lg);
+  min-height: 44px;
   background-color: var(--bg-secondary);
   border: 2px solid var(--border-color);
   border-radius: var(--radius-md);
@@ -102,7 +104,7 @@
 .category-btn:hover,
 .category-btn.active {
   background-color: var(--accent-color);
-  color: white;
+  color: var(--on-accent);
   border-color: var(--accent-color);
 }
 
@@ -121,9 +123,11 @@
   position: relative;
   /* Skip rendering work for off-screen cards; big win when the full 1300+
      emoji grid is shown. contain-intrinsic-size reserves layout space so the
-     scrollbar stays stable before a card is first painted. */
+     scrollbar stays stable before a card is first painted — measured at 145px
+     rendered, so the previous 96px estimate under-reserved ~50px per card and
+     made the document height (and the scroll offset) jump as cards painted. */
   content-visibility: auto;
-  contain-intrinsic-size: auto 96px;
+  contain-intrinsic-size: auto 145px;
 }
 
 .emoji-card:hover,
@@ -155,8 +159,8 @@
 
 .favorite-btn {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 4px;
+  right: 4px;
   background: none;
   border: none;
   font-size: 18px;
@@ -165,9 +169,15 @@
   transition:
     opacity var(--transition-base),
     transform var(--transition-fast);
-  padding: 4px;
   border-radius: var(--radius-sm);
   line-height: 1;
+  /* Most-tapped control in the app; keep it at the 44px target the rest of
+     the icon buttons already use. */
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .favorite-btn:hover,
@@ -193,7 +203,7 @@
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  color: white;
+  color: var(--on-accent);
 }
 
 body.select-mode .select-checkbox {
@@ -250,8 +260,13 @@ body.select-mode .select-checkbox {
   cursor: pointer;
   color: var(--text-secondary);
   transition: color var(--transition-base);
-  padding: 0 8px;
+  padding: 0;
   line-height: 1;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .close-btn:hover {
@@ -341,7 +356,7 @@ body.select-mode .select-checkbox {
   top: var(--space-lg);
   right: var(--space-lg);
   background-color: var(--success);
-  color: white;
+  color: var(--on-accent);
   padding: var(--space-md) 25px;
   border-radius: var(--radius-md);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -361,29 +376,45 @@ body.select-mode .select-checkbox {
 
 .notification.error {
   background-color: var(--danger);
+  color: var(--on-accent);
 }
 
 .collection-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  padding: 4px 10px;
   background-color: var(--bg-secondary);
   border: 2px solid var(--border-color);
   border-radius: 999px;
-  cursor: pointer;
   transition: all var(--transition-base);
   font-size: 14px;
 }
 
+/* The chip body is a button now, so selecting a collection works with the
+   keyboard; the action buttons sit beside it rather than inside it. */
+.chip-open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 6px 4px;
+  min-height: 36px;
+}
+
 .collection-chip.active {
   background-color: var(--accent-color);
-  color: white;
+  color: var(--on-accent);
   border-color: var(--accent-color);
 }
 
 .collection-chip .count {
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--chip-count-bg);
   padding: 2px 8px;
   border-radius: 999px;
   font-size: 12px;
@@ -477,4 +508,49 @@ body.select-mode .select-checkbox {
   font-family: monospace;
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+/* Replaces the inline style attributes that used to live in index.html and in
+   generated markup, so style-src can drop 'unsafe-inline'. */
+.chip-action {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  min-width: 32px;
+  min-height: 32px;
+  font-size: 14px;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.separator-select {
+  padding: 6px;
+  min-height: 44px;
+}
+
+.toolbar-row {
+  margin-top: var(--space-sm);
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.stats-actions {
+  margin-top: var(--space-lg);
+  text-align: center;
+}
+
+.grid-status {
+  text-align: center;
+  padding: var(--space-xl) var(--space-lg);
+  color: var(--text-secondary);
+}
+
+.grid-status.is-error {
+  color: var(--danger);
+  font-weight: 600;
 }

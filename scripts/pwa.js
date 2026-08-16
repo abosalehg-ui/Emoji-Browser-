@@ -10,13 +10,13 @@ export function initPwa() {
     e.preventDefault();
     deferredPrompt = e;
     const btn = document.getElementById('installBtn');
-    if (btn) btn.style.display = 'inline-flex';
+    if (btn) btn.hidden = false;
   });
 
   window.addEventListener('appinstalled', () => {
     deferredPrompt = null;
     const btn = document.getElementById('installBtn');
-    if (btn) btn.style.display = 'none';
+    if (btn) btn.hidden = true;
     showNotification(t('notificationInstalled'));
   });
 
@@ -42,5 +42,5 @@ export async function promptInstall() {
   await deferredPrompt.userChoice;
   deferredPrompt = null;
   const btn = document.getElementById('installBtn');
-  if (btn) btn.style.display = 'none';
+  if (btn) btn.hidden = true;
 }

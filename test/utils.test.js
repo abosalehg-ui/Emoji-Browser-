@@ -23,6 +23,18 @@ describe('htmlEntity', () => {
   it('converts a U+ code to a hex HTML entity', () => {
     expect(htmlEntity('U+1F60A')).toBe('&#x1F60A;');
   });
+
+  // 319 of the 1358 records carry a space-separated sequence; emitting one
+  // entity for the whole string produced invalid HTML for all of them.
+  it('emits one entity per code point in a sequence', () => {
+    expect(htmlEntity('U+2764 U+FE0F')).toBe('&#x2764;&#xFE0F;');
+    expect(htmlEntity('U+1F3F4 U+E0067 U+E007F')).toBe('&#x1F3F4;&#xE0067;&#xE007F;');
+  });
+
+  it('tolerates padding and empty input', () => {
+    expect(htmlEntity('  U+2764   U+FE0F  ')).toBe('&#x2764;&#xFE0F;');
+    expect(htmlEntity('')).toBe('');
+  });
 });
 
 describe('emojiToUnicode', () => {

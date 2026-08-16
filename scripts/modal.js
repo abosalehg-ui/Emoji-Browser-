@@ -31,38 +31,58 @@ export function openEmojiModal(emojiObj) {
   const keywordsEl = document.getElementById('emojiKeywords');
   if (emojiObj.keywords && emojiObj.keywords.length) {
     keywordsEl.textContent = emojiObj.keywords.join('، ');
-    keywordsRow.style.display = '';
+    keywordsRow.hidden = false;
   } else {
-    keywordsRow.style.display = 'none';
+    keywordsRow.hidden = true;
   }
 
   const skinRow = document.getElementById('skinToneRow');
   if (supports(emojiObj)) {
-    skinRow.style.display = '';
+    skinRow.hidden = false;
     renderSkinTones(emojiObj);
   } else {
-    skinRow.style.display = 'none';
+    skinRow.hidden = true;
   }
 
-  const platformList = document.getElementById('platformList');
-  platformList.innerHTML = `
-    <div class="platform-item"><span>Apple (iOS)</span><span>✅</span></div>
-    <div class="platform-item"><span>Google (Android)</span><span>✅</span></div>
-    <div class="platform-item"><span>Microsoft (Windows)</span><span>✅</span></div>
-    <div class="platform-item"><span>Samsung</span><span>✅</span></div>
-    <div class="platform-item"><span>WhatsApp</span><span>✅</span></div>
-    <div class="platform-item"><span>Twitter</span><span>✅</span></div>
-    <div class="platform-item"><span>Facebook</span><span>✅</span></div>
-  `;
+  renderPlatformList();
 
   modal.classList.add('show');
   modal.setAttribute('aria-hidden', 'false');
   trapFocus(modal);
 }
 
+const PLATFORMS = [
+  'Apple (iOS)',
+  'Google (Android)',
+  'Microsoft (Windows)',
+  'Samsung',
+  'WhatsApp',
+  'Twitter',
+  'Facebook',
+];
+
+function renderPlatformList() {
+  const list = document.getElementById('platformList');
+  list.innerHTML = '';
+  PLATFORMS.forEach((platform) => {
+    const row = document.createElement('div');
+    row.className = 'platform-item';
+    const name = document.createElement('span');
+    name.textContent = platform;
+    const mark = document.createElement('span');
+    mark.textContent = '✅';
+    row.append(name, mark);
+    list.appendChild(row);
+  });
+}
+
 function renderSkinTones(emojiObj) {
   const container = document.getElementById('skinToneRow');
-  container.innerHTML = `<div class="emoji-info-label">${t('skinToneLabel')}</div>`;
+  container.innerHTML = '';
+  const label = document.createElement('div');
+  label.className = 'emoji-info-label';
+  label.textContent = t('skinToneLabel');
+  container.appendChild(label);
   const row = document.createElement('div');
   row.className = 'skintone-row';
   const currentTone = state.get('skinTone');
@@ -139,8 +159,4 @@ function trapFocus(modal) {
     }
   };
   modal.addEventListener('keydown', trapHandler);
-}
-
-export function getCurrentEmoji() {
-  return currentEmoji;
 }
