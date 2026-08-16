@@ -12,7 +12,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # jsdom (used by the test environment) requires
+          # ^22.22.2 || ^24.15.0 || >=26 — it fails to load on Node 20, which
+          # GitHub is deprecating for runners anyway.
+          node-version: 22
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check

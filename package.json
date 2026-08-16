@@ -24,6 +24,9 @@
   ],
   "author": "Abdulkareem Al-Aboud <abo.saleh.g@gmail.com>",
   "license": "MIT",
+  "engines": {
+    "node": "^22.22.2 || ^24.15.0 || >=26.0.0"
+  },
   "devDependencies": {
     "eslint": "^9.15.0",
     "jsdom": "^30.0.1",

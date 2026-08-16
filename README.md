@@ -59,8 +59,11 @@ No build step is required — the source in `scripts/` and `styles/` is what shi
 
 ## 🧪 Development / التطوير
 
+Node **22.22.2+** (or 24.15+/26+) is required for the dev tooling; the app
+itself has no runtime dependencies and no build step.
+
 ```bash
-npm install          # install dev tooling (ESLint, Prettier, Vitest)
+npm install          # install dev tooling (ESLint, Prettier, Vitest, jsdom)
 npm run lint         # lint scripts and tests
 npm run format       # format with Prettier
 npm run validate:data# validate the emoji dataset + version consistency
